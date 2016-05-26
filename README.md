@@ -18,11 +18,20 @@
 
 ##SDK 使用
 
-* 导入 [so lib]() 库
+* 导入 [so lib](https://github.com/upyun/android-push-sdk/tree/master/uppush/src/main/libs/armeabi) 库
 
-* 导入 java lib 库 [uppush]()
+* 导入 java lib 库 [uppush](https://github.com/upyun/android-push-sdk/tree/master/uppush/src/main/java/com/upyun/hardware)
 
 ## SDK 使用示例
+
+###添加 SDK 所需权限
+```
+	<uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+```
+
 
 ###初始化 PushClient 传入 SurfaceView 和 Config 参数：
 
@@ -68,7 +77,7 @@
 
 ###DEMO示例：
 
-详见 [demo]()。
+详见 [demo](https://github.com/upyun/android-push-sdk/blob/master/app/src/main/java/com/upyun/push/MainActivity.java)。
 
 ##SDK 最低要求
 
