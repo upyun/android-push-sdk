@@ -161,6 +161,8 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
                 while (audioRecord != null && audioRecord.getState() == AudioRecord.STATE_INITIALIZED) {
                     if (!isPush) {
                         synchronized (PushClient.class) {
+                            audioRecord.setRecordPositionUpdateListener(null);
+                            audioRecord.stop();
                             audioRecord.release();
                             audioRecord = null;
                         }
@@ -182,8 +184,8 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         if (isPush) {
             isPush = false;
             stopCamera();
-            videoEncoder.stop();
             audioEncoder.stop();
+            videoEncoder.stop();
             videoEncoder = null;
             audioEncoder = null;
         }

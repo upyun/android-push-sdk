@@ -47,3 +47,5 @@ captures/
 *.iml
 out
 gen
+/src/main/jni/
+/src/main/obj/
