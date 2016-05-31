@@ -5,13 +5,12 @@ import android.hardware.Camera;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 
 public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callback {
@@ -40,9 +39,9 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
     private VideoEncoder videoEncoder;
     private AudioEncoder audioEncoder;
     private AudioRecord audioRecord;
+    private boolean aloop = false;
+    private Thread aworker = null;
     protected static boolean isPush = false;
-
-    ExecutorService executor = Executors.newSingleThreadExecutor();
 
     public PushClient(SurfaceView surface) {
         this(surface, new Config.Builder().build());
@@ -103,6 +102,28 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         }
     }
 
+    private void stopAudio() {
+        aloop = false;
+        if (aworker != null) {
+            Log.i(TAG, "stop audio worker thread");
+            aworker.interrupt();
+            try {
+                aworker.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                aworker.interrupt();
+            }
+            aworker = null;
+        }
+
+        if (audioRecord != null) {
+            audioRecord.setRecordPositionUpdateListener(null);
+            audioRecord.stop();
+            audioRecord.release();
+            audioRecord = null;
+        }
+    }
+
 
     @Override
     public void onPreviewFrame(byte[] data, Camera camera) {
@@ -144,39 +165,38 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
                 height, config.bitRate, config.fps);
         videoEncoder.init(config.url, width, height);
 
-        executor.execute(new Runnable() {
+        aworker = new Thread(new Runnable() {
             @Override
             public void run() {
-                synchronized (PushClient.class) {
-                }
-                int minBufferSize = AudioRecord.getMinBufferSize(44100,
-                        AudioFormat.CHANNEL_IN_MONO,
-                        AudioFormat.ENCODING_PCM_16BIT);
-
-                audioRecord = new AudioRecord(
-                        MediaRecorder.AudioSource.MIC, 44100,
-                        AudioFormat.CHANNEL_IN_MONO,
-                        AudioFormat.ENCODING_PCM_16BIT, minBufferSize);
-                audioRecord.startRecording();
-                while (audioRecord != null && audioRecord.getState() == AudioRecord.STATE_INITIALIZED) {
-                    if (!isPush) {
-                        synchronized (PushClient.class) {
-                            audioRecord.setRecordPositionUpdateListener(null);
-                            audioRecord.stop();
-                            audioRecord.release();
-                            audioRecord = null;
-                        }
-                        break;
-                    }
-
-                    byte[] buffer = new byte[minBufferSize];
-                    int len = audioRecord.read(buffer, 0, minBufferSize);
-                    if (0 < len) {
-                        audioEncoder.fireAudio(buffer, len);
-                    }
-                }
+                android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);
+                startAudio();
             }
         });
+        aloop = true;
+
+        aworker.start();
+
+    }
+
+    private void startAudio() {
+        int minBufferSize = AudioRecord.getMinBufferSize(44100,
+                AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT);
+
+        audioRecord = new AudioRecord(
+                MediaRecorder.AudioSource.MIC, 44100,
+                AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT, minBufferSize);
+        audioRecord.startRecording();
+        while (aloop && !Thread.interrupted()) {
+
+            byte[] buffer = new byte[minBufferSize];
+            int len = audioRecord.read(buffer, 0, minBufferSize);
+            if (0 < len) {
+                audioEncoder.fireAudio(buffer, len);
+            }
+        }
+
     }
 
     public void stopPush() {
@@ -184,6 +204,7 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         if (isPush) {
             isPush = false;
             stopCamera();
+            stopAudio();
             audioEncoder.stop();
             videoEncoder.stop();
             videoEncoder = null;
