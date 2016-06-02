@@ -29,7 +29,7 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
 
 
     private static final String TAG = "PushClient";
-    private SurfaceView surface;
+    private SurfaceView mSurface;
 
     private Config config;
     private Camera mCamera;
@@ -48,7 +48,7 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
     }
 
     public PushClient(SurfaceView surface, Config config) {
-        this.surface = surface;
+        this.mSurface = surface;
         this.config = config;
     }
 
@@ -56,7 +56,7 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         this.config = config;
     }
 
-    private void initCamera(SurfaceHolder holder) throws IOException {
+    private void startCamera(SurfaceHolder holder) {
 
         holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
         holder.addCallback(this);
@@ -78,6 +78,10 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         mYuvFrameBuffer = new byte[width * height * 3 / 2];
         mCamera = getDefaultCamera(config.cameraType);
         Camera.Parameters parameters = mCamera.getParameters();
+
+//        parameters.set("orientation", "portrait");
+//        parameters.set("orientation", "landscape");
+
         parameters.setPreviewSize(width, height);
         int[] range = findClosestFpsRange(config.fps, parameters.getSupportedPreviewFpsRange());
         parameters.setPreviewFpsRange(range[0], range[1]);
@@ -85,7 +89,11 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         mCamera.setParameters(parameters);
         mCamera.setPreviewCallback(this);
         mCamera.addCallbackBuffer(mYuvFrameBuffer);
-        mCamera.setPreviewDisplay(holder);
+        try {
+            mCamera.setPreviewDisplay(holder);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         if (config.orientation == Config.Orientation.VERTICAL) {
             mCamera.setDisplayOrientation(90);
         }
@@ -153,11 +161,7 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         if (isPush) {
             return;
         }
-        try {
-            initCamera(surface.getHolder());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        startCamera(mSurface.getHolder());
         isPush = true;
         videoEncoder = new VideoEncoder();
         audioEncoder = new AudioEncoder();
@@ -255,5 +259,15 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
 
+    }
+
+    public void covertCamera() {
+        stopCamera();
+        if (config.cameraType == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+            config.cameraType = Camera.CameraInfo.CAMERA_FACING_BACK;
+        } else {
+            config.cameraType = Camera.CameraInfo.CAMERA_FACING_FRONT;
+        }
+        startCamera(mSurface.getHolder());
     }
 }

@@ -29,6 +29,14 @@
             android:text="start" />
 
         <Button
+            android:id="@+id/bt_convert"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="convert"
+            android:text="convert" />
+
+        <Button
             android:id="@+id/bt_setting"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

@@ -21,6 +21,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
     private PushClient mClient;
     private Button mBtToggle;
     private Button mBtSetting;
+    private Button mBtconvert;
     private Config config;
 
     @Override
@@ -30,8 +31,10 @@ public class MainActivity extends Activity implements View.OnClickListener {
         surface = (SurfaceView) findViewById(R.id.sv_camera);
         mBtToggle = (Button) findViewById(R.id.bt_toggle);
         mBtSetting = (Button) findViewById(R.id.bt_setting);
+        mBtconvert = (Button) findViewById(R.id.bt_convert);
         mBtToggle.setOnClickListener(this);
         mBtSetting.setOnClickListener(this);
+        mBtconvert.setOnClickListener(this);
 
         mClient = new PushClient(surface);
     }
@@ -62,6 +65,11 @@ public class MainActivity extends Activity implements View.OnClickListener {
             case R.id.bt_setting:
                 startActivity(new Intent(this, SettingActivity.class));
                 break;
+
+            case R.id.bt_convert:
+
+                mClient.covertCamera();
+
         }
 
     }
