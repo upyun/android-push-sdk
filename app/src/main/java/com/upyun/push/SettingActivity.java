@@ -34,11 +34,12 @@ public class SettingActivity extends Activity implements RadioGroup.OnCheckedCha
 
         mRgResolution.setOnCheckedChangeListener(this);
         mBtSave.setOnClickListener(this);
+        resolution = Config.Resolution.NORMAL;
     }
 
     @Override
     public void onCheckedChanged(RadioGroup group, int checkedId) {
-        switch (checkedId){
+        switch (checkedId) {
             case R.id.rb_high:
                 resolution = Config.Resolution.HIGH;
                 break;

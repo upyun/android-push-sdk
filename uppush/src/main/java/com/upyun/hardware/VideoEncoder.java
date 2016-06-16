@@ -120,14 +120,11 @@ public class VideoEncoder {
                 byte[] outData = new byte[bufferInfo.size];
                 outputBuffer.get(outData);
                 if ((outData[4] & 0x1f) == 7) { // sps pps MediaCodec会在编码第一帧之前输出sps+pps sps pps加在一起
-                    // sps = new byte[outData.length - 4];
-                    // System.arraycopy(outData, 4, sps, 0, outData.length - 4);
                     sps_pps = new byte[outData.length];
                     System.arraycopy(outData, 0, sps_pps, 0, outData.length);
 
 //                Log.d(TAG, "sps pps:" + Arrays.toString(sps_pps));
-
-                    initSPS(sps_pps, sps_pps.length);
+//                    initSPS(sps_pps, sps_pps.length);
                 } else {
                     h264 = new byte[outData.length];
                     System.arraycopy(outData, 0, h264, 0, outData.length);
@@ -159,13 +156,15 @@ public class VideoEncoder {
     }
 
     public void init(String url, int width, int Height) {
-        startTime = System.currentTimeMillis();
-        connect(url, width, Height);
+        synchronized (VideoEncoder.class) {
+            startTime = System.currentTimeMillis();
+            connect(url, width, Height);
+        }
     }
 
     private native void connect(String url, int width, int Height);
 
-    private native void initSPS(byte[] data, int length);
+//    private native void initSPS(byte[] data, int length);
 
     private native void close();
 

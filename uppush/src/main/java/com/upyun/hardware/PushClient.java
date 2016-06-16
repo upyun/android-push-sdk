@@ -77,27 +77,31 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
 
         mYuvFrameBuffer = new byte[width * height * 3 / 2];
         mCamera = getDefaultCamera(config.cameraType);
-        Camera.Parameters parameters = mCamera.getParameters();
+
+        if (mCamera != null) {
+            Camera.Parameters parameters = mCamera.getParameters();
+
 
 //        parameters.set("orientation", "portrait");
 //        parameters.set("orientation", "landscape");
 
-        parameters.setPreviewSize(width, height);
-        int[] range = findClosestFpsRange(config.fps, parameters.getSupportedPreviewFpsRange());
-        parameters.setPreviewFpsRange(range[0], range[1]);
-        parameters.setPreviewFormat(ImageFormat.NV21);
-        mCamera.setParameters(parameters);
-        mCamera.setPreviewCallback(this);
-        mCamera.addCallbackBuffer(mYuvFrameBuffer);
-        try {
-            mCamera.setPreviewDisplay(holder);
-        } catch (IOException e) {
-            e.printStackTrace();
+            parameters.setPreviewSize(width, height);
+            int[] range = findClosestFpsRange(config.fps, parameters.getSupportedPreviewFpsRange());
+            parameters.setPreviewFpsRange(range[0], range[1]);
+            parameters.setPreviewFormat(ImageFormat.NV21);
+            mCamera.setParameters(parameters);
+            mCamera.setPreviewCallback(this);
+            mCamera.addCallbackBuffer(mYuvFrameBuffer);
+            try {
+                mCamera.setPreviewDisplay(holder);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            if (config.orientation == Config.Orientation.VERTICAL) {
+                mCamera.setDisplayOrientation(90);
+            }
+            mCamera.startPreview();
         }
-        if (config.orientation == Config.Orientation.VERTICAL) {
-            mCamera.setDisplayOrientation(90);
-        }
-        mCamera.startPreview();
     }
 
 
@@ -217,23 +221,29 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
     }
 
     public static Camera getDefaultCamera(int position) {
-        // Find the total number of cameras available
-        int mNumberOfCameras = Camera.getNumberOfCameras();
 
-        // Find the ID of the back-facing ("default") camera
-        Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
-        for (int i = 0; i < mNumberOfCameras; i++) {
-            Camera.getCameraInfo(i, cameraInfo);
-            if (cameraInfo.facing == position) {
-                try {
-                    return Camera.open(i);
-                } catch (Exception e) {
-                    e.printStackTrace();
+        synchronized (Camera.class) {
+
+
+            // Find the total number of cameras available
+            int mNumberOfCameras = Camera.getNumberOfCameras();
+
+            // Find the ID of the back-facing ("default") camera
+            Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
+            for (int i = 0; i < mNumberOfCameras; i++) {
+                Camera.getCameraInfo(i, cameraInfo);
+                if (cameraInfo.facing == position) {
+                    try {
+                        return Camera.open(i);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             }
+
+            return null;
         }
 
-        return null;
     }
 
     public boolean isStart() {

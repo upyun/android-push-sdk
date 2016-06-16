@@ -7,6 +7,7 @@ import android.media.MediaCodecList;
 import android.media.MediaFormat;
 import android.os.Build;
 import android.text.TextUtils;
+import android.util.Log;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -78,7 +79,7 @@ public class AudioEncoder {
                 ByteBuffer outputBuffer = outputBuffers[outputBufferIndex];
                 byte[] outData = new byte[bufferInfo.size];
                 outputBuffer.get(outData);
-//            Log.e(TAG, "push audio");
+//                Log.e(TAG, "push audio");
                 sendAudio(outData, bufferInfo.size);
                 mediaCodec.releaseOutputBuffer(outputBufferIndex, false);
                 outputBufferIndex = mediaCodec.dequeueOutputBuffer(bufferInfo, 0);
