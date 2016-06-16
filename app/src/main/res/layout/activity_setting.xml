@@ -17,10 +17,9 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:ems="10"
-        android:inputType="textPostalAddress"
         android:hint="请输入url"
-        android:text="rtmp://testlivesdk.v0.upaiyun.com/live/upyunab"
-        />
+        android:inputType="textPostalAddress"
+        android:text="rtmp://testlivesdk.v0.upaiyun.com/live/upyunab" />
 
     <RadioGroup
         android:id="@+id/rg_resolution"
@@ -40,45 +39,66 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:text="680*480"
             android:checked="true"
-            />
+            android:text="680*480" />
 
         <RadioButton
             android:id="@+id/rb_low"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:text="320*420" />
+            android:text="320*240" />
+
+    </RadioGroup>
+
+    <RadioGroup
+        android:id="@+id/rg_camera"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <RadioButton
+            android:id="@+id/rb_front_camera"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="前置摄像头" />
+
+        <RadioButton
+            android:id="@+id/rb_back_camera"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:checked="true"
+            android:text="后置摄像头" />
 
     </RadioGroup>
 
     <EditText
-        android:hint="请输入比特率"
+        android:id="@+id/et_bitrate"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:inputType="number"
-        android:ems="10"
-        android:id="@+id/et_bitrate"
         android:layout_gravity="center_horizontal"
-        android:text="600000"
-        />
+        android:ems="10"
+        android:hint="请输入比特率"
+        android:inputType="number"
+        android:text="600000" />
 
     <EditText
-        android:text="30"
-        android:hint="请输入fps"
+        android:id="@+id/et_fps"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:inputType="number"
+        android:layout_gravity="center_horizontal"
         android:ems="10"
-        android:id="@+id/et_fps"
-        android:layout_gravity="center_horizontal" />
+        android:hint="请输入fps"
+        android:inputType="number"
+        android:text="30" />
 
     <Button
+        android:id="@+id/bt_save"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="保存设置"
-        android:id="@+id/bt_save"
-        android:layout_gravity="center_horizontal" />
+        android:layout_gravity="center_horizontal"
+        android:text="保存设置" />
 
 </LinearLayout>

@@ -74,7 +74,7 @@ public class Config {
             return this;
         }
 
-        public Builder backCamera(int cameraType) {
+        public Builder cameraType(int cameraType) {
             this.cameraType = cameraType;
             return this;
         }

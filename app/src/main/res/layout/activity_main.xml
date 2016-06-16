@@ -11,8 +11,9 @@
 
     <SurfaceView
         android:id="@+id/sv_camera"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"></SurfaceView>
+        android:layout_width="720px"
+        android:layout_height="1280px"
+        android:layout_centerInParent="true" />
 
     <LinearLayout
         android:layout_width="match_parent"

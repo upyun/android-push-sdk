@@ -47,6 +47,10 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         this(surface, new Config.Builder().build());
     }
 
+    public Config getConfig() {
+        return config;
+    }
+
     public PushClient(SurfaceView surface, Config config) {
         this.mSurface = surface;
         this.config = config;
@@ -56,10 +60,17 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         this.config = config;
     }
 
-    private void startCamera(SurfaceHolder holder) {
+    private void startCamera(final SurfaceHolder holder) {
+
+        if (mCamera == null) {
+            mCamera = getDefaultCamera(config.cameraType);
+        } else {
+            return;
+        }
 
         holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-        holder.addCallback(this);
+        holder.addCallback(PushClient.this);
+
         switch (config.resolution) {
             case HIGH:
                 width = 1280;
@@ -76,7 +87,6 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         }
 
         mYuvFrameBuffer = new byte[width * height * 3 / 2];
-        mCamera = getDefaultCamera(config.cameraType);
 
         if (mCamera != null) {
             Camera.Parameters parameters = mCamera.getParameters();
@@ -90,7 +100,7 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
             parameters.setPreviewFpsRange(range[0], range[1]);
             parameters.setPreviewFormat(ImageFormat.NV21);
             mCamera.setParameters(parameters);
-            mCamera.setPreviewCallback(this);
+            mCamera.setPreviewCallback(PushClient.this);
             mCamera.addCallbackBuffer(mYuvFrameBuffer);
             try {
                 mCamera.setPreviewDisplay(holder);
@@ -101,18 +111,23 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
                 mCamera.setDisplayOrientation(90);
             }
             mCamera.startPreview();
+
         }
+
     }
 
 
     private void stopCamera() {
-        if (mCamera != null) {
-            mCamera.setPreviewCallback(null);
-            mCamera.stopPreview();
-            mCamera.release();
-            mCamera = null;
+        synchronized (Camera.class) {
+            if (mCamera != null) {
+                mCamera.setPreviewCallback(null);
+                mCamera.stopPreview();
+                mCamera.release();
+                mCamera = null;
+            }
         }
     }
+
 
     private void stopAudio() {
         aloop = false;
@@ -165,7 +180,9 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         if (isPush) {
             return;
         }
-        startCamera(mSurface.getHolder());
+        if (mCamera == null) {
+            startCamera(mSurface.getHolder());
+        }
         isPush = true;
         videoEncoder = new VideoEncoder();
         audioEncoder = new AudioEncoder();
@@ -224,7 +241,6 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
 
         synchronized (Camera.class) {
 
-
             // Find the total number of cameras available
             int mNumberOfCameras = Camera.getNumberOfCameras();
 
@@ -237,6 +253,8 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
                         return Camera.open(i);
                     } catch (Exception e) {
                         e.printStackTrace();
+                        Log.e(TAG, e.getMessage());
+
                     }
                 }
             }
@@ -252,7 +270,7 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
-        if (mCamera != null && isPush) {
+        if (mCamera != null) {
             try {
                 mCamera.setPreviewDisplay(holder);
             } catch (IOException e) {
@@ -264,20 +282,30 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
 
+        if (mCamera != null) {
+            try {
+                mCamera.setPreviewDisplay(holder);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-
     }
 
     public void covertCamera() {
-        stopCamera();
+
         if (config.cameraType == Camera.CameraInfo.CAMERA_FACING_FRONT) {
             config.cameraType = Camera.CameraInfo.CAMERA_FACING_BACK;
         } else {
             config.cameraType = Camera.CameraInfo.CAMERA_FACING_FRONT;
         }
-        startCamera(mSurface.getHolder());
+        if (isPush) {
+            stopCamera();
+            startCamera(mSurface.getHolder());
+        }
     }
+
 }

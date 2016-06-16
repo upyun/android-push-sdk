@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 
 import com.upyun.hardware.Config;
@@ -46,6 +47,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
         if (config != null) {
             mClient.setConfig(config);
         }
+
+        changeSurfaceSize(surface, mClient.getConfig());
     }
 
     @Override
@@ -67,11 +70,35 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 break;
 
             case R.id.bt_convert:
-
                 mClient.covertCamera();
+                break;
+        }
+    }
 
+    private void changeSurfaceSize(SurfaceView surface, Config config) {
+        int width = 1280;
+        int height = 720;
+
+        switch (config.resolution) {
+            case HIGH:
+                width = 1280;
+                height = 720;
+                break;
+            case NORMAL:
+//                width = 640;
+//                height = 480;
+//                break;
+            case LOW:
+                width = 320 * 3;
+                height = 240 * 3;
+                break;
         }
 
+        ViewGroup.LayoutParams lp = surface.getLayoutParams();
+
+        lp.width = height;
+        lp.height = width;
+        surface.setLayoutParams(lp);
     }
 }
 
