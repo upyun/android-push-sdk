@@ -47,12 +47,12 @@ public class VideoEncoder {
         }
     }
 
-    public boolean isSupport() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-
-        }
-        return false;
-    }
+//    public boolean isSupport() {
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+//
+//        }
+//        return false;
+//    }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public void setVideoOptions(int width, int height, int bit, int fps) {
@@ -62,8 +62,11 @@ public class VideoEncoder {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                 try {
                     mediaCodec = MediaCodec.createByCodecName(codecName);
+//                    MediaFormat mediaFormat = MediaFormat.createVideoFormat(
+//                            MINE_TYPE, width, height);
+
                     MediaFormat mediaFormat = MediaFormat.createVideoFormat(
-                            MINE_TYPE, width, height);
+                            MINE_TYPE, height, width);
 
                     mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, bit);
                     mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, fps);
@@ -92,7 +95,25 @@ public class VideoEncoder {
                 return;
             }
 //        Log.e(TAG, "video data:" + data.length);
-            byte[] rawData = nv212nv12(data);
+//            byte[] rawData = new byte[data.length];
+//            rotateYUV240SP(data, rawData, 640, 480);
+
+
+            byte[] mRotatedFrameBuffer = new byte[mWidth * mHeight * 3 / 2];
+
+//            cropYUV420SemiPlannerFrame(data, mWidth, mWidth, mCroppedFrameBuffer, mWidth, mHeight);
+            rotateYUV420SemiPlannerFrame(data, mRotatedFrameBuffer, mWidth, mHeight);
+
+
+//            byte[] convertData = nv212nv12(data);
+
+//            byte[] roteData = new byte[mWidth * mHeight * 3 / 2];
+//            rotateYUV240SP(convertData, roteData, mHeight, mWidth);
+
+
+//            cropYUV420SemiPlannerFrame(data, mWidth, mHeight, mCroppedFrameBuffer, 640, 384);
+//            byte[] rawData = rotateYUV420SemiPlannerFrame(mCroppedFrameBuffer, mRotatedFrameBuffer, mHeight, mWidth);
+//            byte[] rawData = dat有a;
             // 获得编码器输入输出数据缓存区 API:21之后可以使用
             // mediaCodec.getInputBuffer(mediaCodec.dequeueInputBuffer(-1));直接获得缓存数据
             ByteBuffer[] inputBuffers = mediaCodec.getInputBuffers();
@@ -104,9 +125,9 @@ public class VideoEncoder {
                 // 将原始数据填充 inputbuffers
                 ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
                 inputBuffer.clear();
-                inputBuffer.put(rawData);
+                inputBuffer.put(mRotatedFrameBuffer);
                 //将此数据加入编码队列 参数3：需要一个增长的时间戳，不然无法持续编码
-                mediaCodec.queueInputBuffer(inputBufferIndex, 0, rawData.length,
+                mediaCodec.queueInputBuffer(inputBufferIndex, 0, mRotatedFrameBuffer.length,
                         System.nanoTime() / 1000, 0);
             }
             //获得编码后的数据
@@ -155,10 +176,11 @@ public class VideoEncoder {
         }
     }
 
-    public void init(String url, int width, int Height) {
+    public void init(String url, int width, int height) {
         synchronized (VideoEncoder.class) {
             startTime = System.currentTimeMillis();
-            connect(url, width, Height);
+//            connect(url, width, height);
+            connect(url, height, width);
         }
     }
 
@@ -167,6 +189,97 @@ public class VideoEncoder {
 //    private native void initSPS(byte[] data, int length);
 
     private native void close();
+
+    // Y, U (Cb) and V (Cr)
+    // yuv420                     yuv yuv yuv yuv
+    // yuv420p (planar)   yyyy*2 uu vv
+    // yuv420sp(semi-planner)   yyyy*2 uv uv
+    // I420 -> YUV420P   yyyy*2 uu vv
+    // YV12 -> YUV420P   yyyy*2 vv uu
+    // NV21 -> YUV420SP  yyyy*2 vu vu
+    // NV12 -> YUV420SP  yyyy*2 uv uv
+    // NV16 -> YUV422SP  yyyy uv uv
+    // YUY2 -> YUV422SP  yuyv yuyv
+    private byte[] cropYUV420SemiPlannerFrame(byte[] input, int iw, int ih, byte[] output, int ow, int oh) {
+        if (iw < ow || ih < oh) {
+            throw new AssertionError("Crop revolution size must be less than original one");
+        }
+        if (ow % 32 != 0 || oh % 32 != 0) {
+            // Note: the stride of resolution must be set as 16x for hard encoding with some chip like MTK
+            // Since Y component is quadruple size as U and V component, the stride must be set as 32x
+            throw new AssertionError("MTK encoding revolution stride must be 32x");
+        }
+
+        int iFrameSize = iw * ih;
+        int oFrameSize = ow * oh;
+
+        int i = 0;
+        for (int row = (ih - oh) / 2; row < oh + (ih - oh) / 2; row++) {
+            for (int col = (iw - ow) / 2; col < ow + (iw - ow) / 2; col++) {
+                output[i++] = input[iw * row + col];  // Y
+            }
+        }
+
+        i = 0;
+        for (int row = (ih - oh) / 4; row < oh / 2 + (ih - oh) / 4; row++) {
+            for (int col = (iw - ow) / 4; col < ow / 2 + (iw - ow) / 4; col++) {
+                output[oFrameSize + 2 * i] = input[iFrameSize + iw * row + 2 * col];  // U
+                output[oFrameSize + 2 * i + 1] = input[iFrameSize + iw * row + 2 * col + 1];  // V
+                i++;
+            }
+        }
+
+        return output;
+    }
+
+
+    // 1. rotate 90 degree clockwise
+    // 2. convert NV21 to NV12
+    private byte[] rotateYUV420SemiPlannerFrame(byte[] input, byte[] output, int width, int height) {
+        int frameSize = width * height;
+
+        int i = 0;
+        for (int col = 0; col < width; col++) {
+            for (int row = height - 1; row >= 0; row--) {
+                output[i++] = input[width * row + col]; // Y
+            }
+        }
+
+        i = 0;
+        for (int col = 0; col < width / 2; col++) {
+            for (int row = height / 2 - 1; row >= 0; row--) {
+                output[frameSize + i * 2 + 1] = input[frameSize + width * row + col * 2]; // Cb (U)
+                output[frameSize + i * 2] = input[frameSize + width * row + col * 2 + 1]; // Cr (V)
+                i++;
+            }
+        }
+
+        return output;
+    }
+
+    public static void rotateYUV240SP(byte[] src, byte[] des, int width, int height) {
+
+        int wh = width * height;
+        //旋转Y
+        int k = 0;
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < height; j++) {
+                des[k] = src[width * j + i];
+                k++;
+            }
+        }
+
+        for (int i = 0; i < width; i += 2) {
+            for (int j = 0; j < height / 2; j++) {
+                des[k] = src[wh + width * j + i];
+                des[k + 1] = src[wh + width * j + i + 1];
+                k += 2;
+            }
+        }
+
+
+    }
+
 
     private byte[] nv212nv12(byte[] data) {
         int len = mWidth * mHeight;
