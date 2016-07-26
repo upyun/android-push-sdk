@@ -81,7 +81,7 @@ public class VideoEncoder {
                             MediaCodec.CONFIGURE_FLAG_ENCODE);
                     mediaCodec.start();
                 } catch (Exception e) {
-                    Log.e(TAG, e.getMessage());
+//                    Log.e(TAG, e.getMessage());
                     e.printStackTrace();
                 }
             }
@@ -91,7 +91,7 @@ public class VideoEncoder {
     public void fireVideo(byte[] data) {
         synchronized (VideoEncoder.class) {
 
-            if (!PushClient.isPush) {
+            if (!PushClient.isPush || mediaCodec == null) {
                 return;
             }
 //        Log.e(TAG, "video data:" + data.length);
