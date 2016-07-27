@@ -1,6 +1,7 @@
 package com.upyun.hardware;
 
 import android.annotation.TargetApi;
+import android.hardware.Camera;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecList;
@@ -24,6 +25,14 @@ public class VideoEncoder {
     private byte[] sps_pps;
     public static long startTime;
 
+    private int mPushWidth;
+    private int mPushHeight;
+    private int mColorFormats;
+
+    private byte[] mRotatedFrameBuffer;
+    private byte[] mFlippedFrameBuffer;
+    private byte[] mCroppedFrameBuffer;
+
     public VideoEncoder() {
         initialize();
     }
@@ -39,6 +48,11 @@ public class VideoEncoder {
                     for (int format : codecCapabilities.colorFormats) {
                         if (format == MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar) {
                             codecName = mediaCodecInfo.getName();
+                            mColorFormats = MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar;
+                            return;
+                        } else if (format == MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar) {
+                            codecName = mediaCodecInfo.getName();
+                            mColorFormats = MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar;
                             return;
                         }
                     }
@@ -47,26 +61,24 @@ public class VideoEncoder {
         }
     }
 
-//    public boolean isSupport() {
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-//
-//        }
-//        return false;
-//    }
-
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public void setVideoOptions(int width, int height, int bit, int fps) {
         synchronized (VideoEncoder.class) {
             mWidth = width;
             mHeight = height;
+
+            mPushWidth = mHeight;
+            mPushHeight = mWidth;
+
+            mRotatedFrameBuffer = new byte[mWidth * mHeight * 3 / 2];
+            mFlippedFrameBuffer = new byte[mWidth * mHeight * 3 / 2];
+            mCroppedFrameBuffer = new byte[mWidth * mHeight * 3 / 2];
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                 try {
                     mediaCodec = MediaCodec.createByCodecName(codecName);
-//                    MediaFormat mediaFormat = MediaFormat.createVideoFormat(
-//                            MINE_TYPE, width, height);
-
                     MediaFormat mediaFormat = MediaFormat.createVideoFormat(
-                            MINE_TYPE, height, width);
+                            MINE_TYPE, mPushWidth, mPushHeight);
 
                     mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, bit);
                     mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, fps);
@@ -75,13 +87,12 @@ public class VideoEncoder {
                     mediaFormat
                             .setInteger(
                                     MediaFormat.KEY_COLOR_FORMAT,
-                                    MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar);
+                                    mColorFormats);
 
                     mediaCodec.configure(mediaFormat, null, null,
                             MediaCodec.CONFIGURE_FLAG_ENCODE);
                     mediaCodec.start();
                 } catch (Exception e) {
-                    Log.e(TAG, e.getMessage());
                     e.printStackTrace();
                 }
             }
@@ -94,26 +105,9 @@ public class VideoEncoder {
             if (!PushClient.isPush) {
                 return;
             }
-//        Log.e(TAG, "video data:" + data.length);
-//            byte[] rawData = new byte[data.length];
-//            rotateYUV240SP(data, rawData, 640, 480);
 
+            preprocessYUVData(data);
 
-            byte[] mRotatedFrameBuffer = new byte[mWidth * mHeight * 3 / 2];
-
-//            cropYUV420SemiPlannerFrame(data, mWidth, mWidth, mCroppedFrameBuffer, mWidth, mHeight);
-            rotateYUV420SemiPlannerFrame(data, mRotatedFrameBuffer, mWidth, mHeight);
-
-
-//            byte[] convertData = nv212nv12(data);
-
-//            byte[] roteData = new byte[mWidth * mHeight * 3 / 2];
-//            rotateYUV240SP(convertData, roteData, mHeight, mWidth);
-
-
-//            cropYUV420SemiPlannerFrame(data, mWidth, mHeight, mCroppedFrameBuffer, 640, 384);
-//            byte[] rawData = rotateYUV420SemiPlannerFrame(mCroppedFrameBuffer, mRotatedFrameBuffer, mHeight, mWidth);
-//            byte[] rawData = dat有a;
             // 获得编码器输入输出数据缓存区 API:21之后可以使用
             // mediaCodec.getInputBuffer(mediaCodec.dequeueInputBuffer(-1));直接获得缓存数据
             ByteBuffer[] inputBuffers = mediaCodec.getInputBuffers();
@@ -167,6 +161,39 @@ public class VideoEncoder {
         }
     }
 
+    private void preprocessYUVData(byte[] data) {
+        if (PushClient.CAMERA_TYPE == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+            switch (mColorFormats) {
+                case MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar:
+                    cropYUV420PlannerFrame(data, mWidth, mHeight, mCroppedFrameBuffer, mPushHeight, mPushWidth);
+                    flipYUV420PlannerFrame(mCroppedFrameBuffer, mFlippedFrameBuffer, mPushHeight, mPushWidth);
+                    rotateYUV420PlannerFrame(mFlippedFrameBuffer, mRotatedFrameBuffer, mPushHeight, mPushWidth);
+                    break;
+                case MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar:
+                    cropYUV420SemiPlannerFrame(data, mWidth, mHeight, mCroppedFrameBuffer, mPushHeight, mPushWidth);
+                    flipYUV420SemiPlannerFrame(mCroppedFrameBuffer, mFlippedFrameBuffer, mPushHeight, mPushWidth);
+                    rotateYUV420SemiPlannerFrame(mFlippedFrameBuffer, mRotatedFrameBuffer, mPushHeight, mPushWidth);
+                    break;
+                default:
+                    throw new IllegalStateException("Unsupported color format!");
+            }
+
+        } else {
+            switch (mColorFormats) {
+                case MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar:
+                    cropYUV420PlannerFrame(data, mWidth, mHeight, mCroppedFrameBuffer, mPushHeight, mPushWidth);
+                    rotateYUV420PlannerFrame(mCroppedFrameBuffer, mRotatedFrameBuffer, mPushHeight, mPushWidth);
+                    break;
+                case MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar:
+                    cropYUV420SemiPlannerFrame(data, mWidth, mHeight, mCroppedFrameBuffer, mPushHeight, mPushWidth);
+                    rotateYUV420SemiPlannerFrame(mCroppedFrameBuffer, mRotatedFrameBuffer, mPushHeight, mPushWidth);
+                    break;
+                default:
+                    throw new IllegalStateException("Unsupported color format!");
+            }
+        }
+    }
+
     private native void send(byte[] data, int length, long time);
 
     private void sendVideo(byte[] data, int length) {
@@ -176,11 +203,10 @@ public class VideoEncoder {
         }
     }
 
-    public void init(String url, int width, int height) {
+    public void init(String url) {
         synchronized (VideoEncoder.class) {
             startTime = System.currentTimeMillis();
-//            connect(url, width, height);
-            connect(url, height, width);
+            connect(url, mPushWidth, mPushHeight);
         }
     }
 
@@ -257,6 +283,74 @@ public class VideoEncoder {
         return output;
     }
 
+    private byte[] cropYUV420PlannerFrame(byte[] input, int iw, int ih, byte[] output, int ow, int oh) {
+        if (iw < ow || ih < oh) {
+            throw new AssertionError("Crop revolution size must be less than original one");
+        }
+
+        int iFrameSize = iw * ih;
+        int iQFrameSize = iFrameSize / 4;
+        int oFrameSize = ow * oh;
+        int oQFrameSize = oFrameSize / 4;
+
+        int i = 0;
+        for (int row = (ih - oh) / 2; row < oh + (ih - oh) / 2; row++) {
+            for (int col = (iw - ow) / 2; col < ow + (iw - ow) / 2; col++) {
+                output[i++] = input[iw * row + col];  // Y
+            }
+        }
+
+        i = 0;
+        for (int row = (ih - oh) / 4; row < oh / 2 + (ih - oh) / 4; row++) {
+            for (int col = (iw - ow) / 4; col < ow / 2 + (iw - ow) / 4; col++) {
+                output[oFrameSize + i] = input[iFrameSize + iw / 2 * row + col];  // U
+                i++;
+            }
+        }
+
+        i = 0;
+        for (int row = (ih - oh) / 4; row < oh / 2 + (ih - oh) / 4; row++) {
+            for (int col = (iw - ow) / 4; col < ow / 2 + (iw - ow) / 4; col++) {
+                output[oFrameSize + oQFrameSize + i] = input[iFrameSize + iQFrameSize + iw / 2 * row + col];  // V
+                i++;
+            }
+        }
+
+        return output;
+    }
+
+    // 1. rotate 90 degree clockwise
+    // 2. convert YV12 to I420
+    private byte[] rotateYUV420PlannerFrame(byte[] input, byte[] output, int width, int height) {
+        int frameSize = width * height;
+        int qFrameSize = frameSize / 4;
+
+        int i = 0;
+        for (int col = 0; col < width; col++) {
+            for (int row = height - 1; row >= 0; row--) {
+                output[i++] = input[width * row + col]; // Y
+            }
+        }
+
+        i = 0;
+        for (int col = 0; col < width / 2; col++) {
+            for (int row = height / 2 - 1; row >= 0; row--) {
+                output[frameSize + i] = input[frameSize + qFrameSize + width / 2 * row + col]; // Cb (U)
+                i++;
+            }
+        }
+
+        i = 0;
+        for (int col = 0; col < width / 2; col++) {
+            for (int row = height / 2 - 1; row >= 0; row--) {
+                output[frameSize + qFrameSize + i] = input[frameSize + width / 2 * row + col]; // Cr (V)
+                i++;
+            }
+        }
+
+        return output;
+    }
+
     public static void rotateYUV240SP(byte[] src, byte[] des, int width, int height) {
 
         int wh = width * height;
@@ -276,10 +370,59 @@ public class VideoEncoder {
                 k += 2;
             }
         }
-
-
     }
 
+    private byte[] flipYUV420SemiPlannerFrame(byte[] input, byte[] output, int width, int height) {
+        int frameSize = width * height;
+
+        int i = 0;
+        for (int row = 0; row < height; row++) {
+            for (int col = width - 1; col >= 0; col--) {
+                output[i++] = input[width * row + col]; // Y
+            }
+        }
+
+        i = 0;
+        for (int row = 0; row < height / 2; row++) {
+            for (int col = width / 2 - 1; col >= 0; col--) {
+                output[frameSize + i * 2] = input[frameSize + width * row + col * 2]; // Cb (U)
+                output[frameSize + i * 2 + 1] = input[frameSize + width * row + col * 2 + 1]; // Cr (V)
+                i++;
+            }
+        }
+
+        return output;
+    }
+
+    private byte[] flipYUV420PlannerFrame(byte[] input, byte[] output, int width, int height) {
+        int frameSize = width * height;
+        int qFrameSize = frameSize / 4;
+
+        int i = 0;
+        for (int row = 0; row < height; row++) {
+            for (int col = width - 1; col >= 0; col--) {
+                output[i++] = input[width * row + col]; // Y
+            }
+        }
+
+        i = 0;
+        for (int row = 0; row < height / 2; row++) {
+            for (int col = width / 2 - 1; col >= 0; col--) {
+                output[frameSize + i] = input[frameSize + width / 2 * row + col]; // Cr (V)
+                i++;
+            }
+        }
+
+        i = 0;
+        for (int row = 0; row < height / 2; row++) {
+            for (int col = width / 2 - 1; col >= 0; col--) {
+                output[frameSize + qFrameSize + i] = input[frameSize + qFrameSize + width / 2 * row + col]; // Cb (U)
+                i++;
+            }
+        }
+
+        return output;
+    }
 
     private byte[] nv212nv12(byte[] data) {
         int len = mWidth * mHeight;

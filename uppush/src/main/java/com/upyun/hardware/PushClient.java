@@ -42,6 +42,7 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
     private boolean aloop = false;
     private Thread aworker = null;
     protected static boolean isPush = false;
+    protected static int CAMERA_TYPE;
 
     public PushClient(SurfaceView surface) {
         this(surface, new Config.Builder().build());
@@ -61,6 +62,8 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
     }
 
     private void startCamera(final SurfaceHolder holder) {
+
+        CAMERA_TYPE = config.cameraType;
 
         if (mCamera == null) {
             mCamera = getDefaultCamera(config.cameraType);
@@ -188,7 +191,7 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         audioEncoder = new AudioEncoder();
         videoEncoder.setVideoOptions(width,
                 height, config.bitRate, config.fps);
-        videoEncoder.init(config.url, width, height);
+        videoEncoder.init(config.url);
 
         aworker = new Thread(new Runnable() {
             @Override
