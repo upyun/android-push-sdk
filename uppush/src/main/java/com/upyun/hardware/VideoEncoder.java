@@ -165,9 +165,10 @@ public class VideoEncoder {
         if (PushClient.CAMERA_TYPE == Camera.CameraInfo.CAMERA_FACING_FRONT) {
             switch (mColorFormats) {
                 case MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar:
-                    cropYUV420PlannerFrame(data, mWidth, mHeight, mCroppedFrameBuffer, mPushHeight, mPushWidth);
-                    flipYUV420PlannerFrame(mCroppedFrameBuffer, mFlippedFrameBuffer, mPushHeight, mPushWidth);
-                    rotateYUV420PlannerFrame(mFlippedFrameBuffer, mRotatedFrameBuffer, mPushHeight, mPushWidth);
+                    cropYUV420SemiPlannerFrame(data, mWidth, mHeight, mCroppedFrameBuffer, mPushHeight, mPushWidth);
+                    flipYUV420SemiPlannerFrame(mCroppedFrameBuffer, mFlippedFrameBuffer, mPushHeight, mPushWidth);
+                    rotateYUV420SemiPlannerFrame(mFlippedFrameBuffer, mRotatedFrameBuffer, mPushHeight, mPushWidth);
+                    mRotatedFrameBuffer = yuv420sp_to_yuv420p(mRotatedFrameBuffer);
                     break;
                 case MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar:
                     cropYUV420SemiPlannerFrame(data, mWidth, mHeight, mCroppedFrameBuffer, mPushHeight, mPushWidth);
@@ -181,8 +182,9 @@ public class VideoEncoder {
         } else {
             switch (mColorFormats) {
                 case MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar:
-                    cropYUV420PlannerFrame(data, mWidth, mHeight, mCroppedFrameBuffer, mPushHeight, mPushWidth);
-                    rotateYUV420PlannerFrame(mCroppedFrameBuffer, mRotatedFrameBuffer, mPushHeight, mPushWidth);
+                    cropYUV420SemiPlannerFrame(data, mWidth, mHeight, mCroppedFrameBuffer, mPushHeight, mPushWidth);
+                    rotateYUV420SemiPlannerFrame(data, mRotatedFrameBuffer, mPushHeight, mPushWidth);
+                    mRotatedFrameBuffer = yuv420sp_to_yuv420p(mRotatedFrameBuffer);
                     break;
                 case MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar:
                     cropYUV420SemiPlannerFrame(data, mWidth, mHeight, mCroppedFrameBuffer, mPushHeight, mPushWidth);
@@ -283,95 +285,6 @@ public class VideoEncoder {
         return output;
     }
 
-    private byte[] cropYUV420PlannerFrame(byte[] input, int iw, int ih, byte[] output, int ow, int oh) {
-        if (iw < ow || ih < oh) {
-            throw new AssertionError("Crop revolution size must be less than original one");
-        }
-
-        int iFrameSize = iw * ih;
-        int iQFrameSize = iFrameSize / 4;
-        int oFrameSize = ow * oh;
-        int oQFrameSize = oFrameSize / 4;
-
-        int i = 0;
-        for (int row = (ih - oh) / 2; row < oh + (ih - oh) / 2; row++) {
-            for (int col = (iw - ow) / 2; col < ow + (iw - ow) / 2; col++) {
-                output[i++] = input[iw * row + col];  // Y
-            }
-        }
-
-        i = 0;
-        for (int row = (ih - oh) / 4; row < oh / 2 + (ih - oh) / 4; row++) {
-            for (int col = (iw - ow) / 4; col < ow / 2 + (iw - ow) / 4; col++) {
-                output[oFrameSize + i] = input[iFrameSize + iw / 2 * row + col];  // U
-                i++;
-            }
-        }
-
-        i = 0;
-        for (int row = (ih - oh) / 4; row < oh / 2 + (ih - oh) / 4; row++) {
-            for (int col = (iw - ow) / 4; col < ow / 2 + (iw - ow) / 4; col++) {
-                output[oFrameSize + oQFrameSize + i] = input[iFrameSize + iQFrameSize + iw / 2 * row + col];  // V
-                i++;
-            }
-        }
-
-        return output;
-    }
-
-    // 1. rotate 90 degree clockwise
-    // 2. convert YV12 to I420
-    private byte[] rotateYUV420PlannerFrame(byte[] input, byte[] output, int width, int height) {
-        int frameSize = width * height;
-        int qFrameSize = frameSize / 4;
-
-        int i = 0;
-        for (int col = 0; col < width; col++) {
-            for (int row = height - 1; row >= 0; row--) {
-                output[i++] = input[width * row + col]; // Y
-            }
-        }
-
-        i = 0;
-        for (int col = 0; col < width / 2; col++) {
-            for (int row = height / 2 - 1; row >= 0; row--) {
-                output[frameSize + i] = input[frameSize + qFrameSize + width / 2 * row + col]; // Cb (U)
-                i++;
-            }
-        }
-
-        i = 0;
-        for (int col = 0; col < width / 2; col++) {
-            for (int row = height / 2 - 1; row >= 0; row--) {
-                output[frameSize + qFrameSize + i] = input[frameSize + width / 2 * row + col]; // Cr (V)
-                i++;
-            }
-        }
-
-        return output;
-    }
-
-    public static void rotateYUV240SP(byte[] src, byte[] des, int width, int height) {
-
-        int wh = width * height;
-        //旋转Y
-        int k = 0;
-        for (int i = 0; i < width; i++) {
-            for (int j = 0; j < height; j++) {
-                des[k] = src[width * j + i];
-                k++;
-            }
-        }
-
-        for (int i = 0; i < width; i += 2) {
-            for (int j = 0; j < height / 2; j++) {
-                des[k] = src[wh + width * j + i];
-                des[k + 1] = src[wh + width * j + i + 1];
-                k += 2;
-            }
-        }
-    }
-
     private byte[] flipYUV420SemiPlannerFrame(byte[] input, byte[] output, int width, int height) {
         int frameSize = width * height;
 
@@ -394,48 +307,21 @@ public class VideoEncoder {
         return output;
     }
 
-    private byte[] flipYUV420PlannerFrame(byte[] input, byte[] output, int width, int height) {
-        int frameSize = width * height;
-        int qFrameSize = frameSize / 4;
-
-        int i = 0;
-        for (int row = 0; row < height; row++) {
-            for (int col = width - 1; col >= 0; col--) {
-                output[i++] = input[width * row + col]; // Y
-            }
-        }
-
-        i = 0;
-        for (int row = 0; row < height / 2; row++) {
-            for (int col = width / 2 - 1; col >= 0; col--) {
-                output[frameSize + i] = input[frameSize + width / 2 * row + col]; // Cr (V)
-                i++;
-            }
-        }
-
-        i = 0;
-        for (int row = 0; row < height / 2; row++) {
-            for (int col = width / 2 - 1; col >= 0; col--) {
-                output[frameSize + qFrameSize + i] = input[frameSize + qFrameSize + width / 2 * row + col]; // Cb (U)
-                i++;
-            }
-        }
-
-        return output;
-    }
-
-    private byte[] nv212nv12(byte[] data) {
+    // nv12 >> I420
+    private byte[] yuv420sp_to_yuv420p(byte[] data) {
         int len = mWidth * mHeight;
         byte[] buffer = new byte[len * 3 / 2];
         byte[] y = new byte[len];
-        byte[] uv = new byte[len / 2];
+        byte[] u = new byte[len / 4];
+        byte[] v = new byte[len / 4];
         System.arraycopy(data, 0, y, 0, len);
         for (int i = 0; i < len / 4; i++) {
-            uv[i * 2] = data[len + i * 2 + 1];
-            uv[i * 2 + 1] = data[len + i * 2];
+            u[i] = data[len + i * 2];
+            v[i] = data[len + i * 2 + 1];
         }
-        System.arraycopy(y, 0, buffer, 0, y.length);
-        System.arraycopy(uv, 0, buffer, y.length, uv.length);
+        System.arraycopy(y, 0, buffer, 0, len);
+        System.arraycopy(u, 0, buffer, len, len / 4);
+        System.arraycopy(v, 0, buffer, len * 5 / 4, len / 4);
         return buffer;
     }
 
