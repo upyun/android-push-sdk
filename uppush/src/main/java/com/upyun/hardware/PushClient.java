@@ -9,24 +9,14 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import net.ossrs.yasea.SrsFlvMuxer;
+import net.ossrs.yasea.rtmp.RtmpPublisher;
+
 import java.io.IOException;
 import java.util.List;
 
 
 public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callback {
-
-    static {
-        System.loadLibrary("avutil-54");
-        System.loadLibrary("swresample-1");
-        System.loadLibrary("avcodec-56");
-        System.loadLibrary("avformat-56");
-        System.loadLibrary("swscale-3");
-        System.loadLibrary("postproc-53");
-        System.loadLibrary("avfilter-5");
-        System.loadLibrary("avdevice-56");
-        System.loadLibrary("uppush");
-    }
-
 
     private static final String TAG = "PushClient";
     private SurfaceView mSurface;
@@ -43,6 +33,41 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
     private Thread aworker = null;
     protected static boolean isPush = false;
     protected static int CAMERA_TYPE;
+
+    private SrsFlvMuxer mSrsFlvMuxer = new SrsFlvMuxer(new RtmpPublisher.EventHandler() {
+        @Override
+        public void onRtmpConnecting(String msg) {
+            Log.e(TAG, msg);
+        }
+
+        @Override
+        public void onRtmpConnected(String msg) {
+            Log.e(TAG, msg);
+        }
+
+        @Override
+        public void onRtmpVideoStreaming(String msg) {
+        }
+
+        @Override
+        public void onRtmpAudioStreaming(String msg) {
+        }
+
+        @Override
+        public void onRtmpStopped(String msg) {
+            Log.e(TAG, msg);
+        }
+
+        @Override
+        public void onRtmpDisconnected(String msg) {
+            Log.e(TAG, msg);
+        }
+
+        @Override
+        public void onRtmpOutputFps(final double fps) {
+            Log.i(TAG, String.format("Output Fps: %f", fps));
+        }
+    });
 
     public PushClient(SurfaceView surface) {
         this(surface, new Config.Builder().build());
@@ -94,10 +119,6 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         if (mCamera != null) {
             Camera.Parameters parameters = mCamera.getParameters();
 
-
-//        parameters.set("orientation", "portrait");
-//        parameters.set("orientation", "landscape");
-
             parameters.setPreviewSize(width, height);
             int[] range = findClosestFpsRange(config.fps, parameters.getSupportedPreviewFpsRange());
             parameters.setPreviewFpsRange(range[0], range[1]);
@@ -114,7 +135,6 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
                 mCamera.setDisplayOrientation(90);
             }
             mCamera.startPreview();
-
         }
 
     }
@@ -157,6 +177,8 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
 
     @Override
     public void onPreviewFrame(byte[] data, Camera camera) {
+
+//        Log.e(TAG, "data:" + data.length);
         if (videoEncoder != null && isPush) {
             videoEncoder.fireVideo(data);
             camera.addCallbackBuffer(mYuvFrameBuffer);
@@ -179,7 +201,7 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         return closestRange;
     }
 
-    public void startPush() {
+    public void startPush() throws IOException {
         if (isPush) {
             return;
         }
@@ -187,11 +209,12 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
             startCamera(mSurface.getHolder());
         }
         isPush = true;
-        videoEncoder = new VideoEncoder();
-        audioEncoder = new AudioEncoder();
+        videoEncoder = new VideoEncoder(mSrsFlvMuxer);
+        audioEncoder = new AudioEncoder(mSrsFlvMuxer);
         videoEncoder.setVideoOptions(width,
                 height, config.bitRate, config.fps);
-        videoEncoder.init(config.url);
+//        videoEncoder.init(config.url);
+        mSrsFlvMuxer.start(config.url);
 
         aworker = new Thread(new Runnable() {
             @Override
@@ -228,6 +251,7 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
     }
 
     public void stopPush() {
+        mSrsFlvMuxer.stop();
 
         if (isPush) {
             isPush = false;
@@ -237,6 +261,7 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
             videoEncoder.stop();
             videoEncoder = null;
             audioEncoder = null;
+
         }
     }
 
