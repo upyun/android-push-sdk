@@ -15,6 +15,8 @@ import android.widget.Button;
 import com.upyun.hardware.Config;
 import com.upyun.hardware.PushClient;
 
+import java.io.IOException;
+
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 public class MainActivity extends Activity implements View.OnClickListener {
     private static final String TAG = "MainActivity";
@@ -24,6 +26,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
     private Button mBtSetting;
     private Button mBtconvert;
     private Config config;
+    private String mNotifyMsg;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +42,22 @@ public class MainActivity extends Activity implements View.OnClickListener {
         mBtconvert.setOnClickListener(this);
 
         mClient = new PushClient(surface);
+
+
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread thread, Throwable ex) {
+                mNotifyMsg = ex.toString();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Log.e(TAG, mNotifyMsg);
+                        mClient.stopPush();
+                        mBtToggle.setText("start");
+                    }
+                });
+            }
+        });
     }
 
     @Override
@@ -60,7 +80,13 @@ public class MainActivity extends Activity implements View.OnClickListener {
                     Log.e(TAG, "stop");
                     mBtToggle.setText("start");
                 } else {
-                    mClient.startPush();
+                    try {
+                        mClient.startPush();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        Log.e(TAG, e.toString());
+                        return;
+                    }
                     Log.e(TAG, "start");
                     mBtToggle.setText("stop");
                 }
