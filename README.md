@@ -18,9 +18,7 @@
 
 ##SDK 使用
 
-* 导入 [so lib](https://github.com/upyun/android-push-sdk/tree/master/uppush/src/main/libs/armeabi) 库
-
-* 导入 java lib 库 [uppush](https://github.com/upyun/android-push-sdk/tree/master/uppush/src/main/java/com/upyun/hardware)
+* 导入 java lib 库 [uppush](https://github.com/upyun/android-push-sdk/tree/master/uppush/src/main/java)
 
 ## SDK 使用示例
 
