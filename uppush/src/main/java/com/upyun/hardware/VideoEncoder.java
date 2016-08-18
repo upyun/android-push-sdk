@@ -105,6 +105,10 @@ public class VideoEncoder {
     public void fireVideo(byte[] data) {
         synchronized (VideoEncoder.class) {
 
+            if (mflvmuxer.getVideoFrameCacheNumber().get() > 5) {
+                return;
+            }
+
             if (!PushClient.isPush) {
                 return;
             }
@@ -131,7 +135,7 @@ public class VideoEncoder {
             //有效数据下标
             int outputBufferIndex = mediaCodec.dequeueOutputBuffer(bufferInfo, 0);
 //        Log.d("DEMO", "输出:" + outputBufferIndex);
-            while (outputBufferIndex >= 0) {
+            while (outputBufferIndex >= 0 && PushClient.isPush) {
                 ByteBuffer outputBuffer = outputBuffers[outputBufferIndex];
 //            Log.e(TAG, "编码后大小:" + bufferInfo.size);
 

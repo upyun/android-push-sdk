@@ -202,13 +202,14 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
     }
 
     public void startPush() throws IOException {
+
         if (isPush) {
             return;
         }
+        isPush = true;
         if (mCamera == null) {
             startCamera(mSurface.getHolder());
         }
-        isPush = true;
         videoEncoder = new VideoEncoder(mSrsFlvMuxer);
         audioEncoder = new AudioEncoder(mSrsFlvMuxer);
         videoEncoder.setVideoOptions(width,
@@ -226,7 +227,6 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         aloop = true;
 
         aworker.start();
-
     }
 
     private void startAudio() {
@@ -251,17 +251,19 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
     }
 
     public void stopPush() {
-        mSrsFlvMuxer.stop();
-
-        if (isPush) {
-            isPush = false;
-            stopCamera();
-            stopAudio();
+        isPush = false;
+        if (mSrsFlvMuxer != null) {
+            mSrsFlvMuxer.stop();
+        }
+        stopCamera();
+        stopAudio();
+        if (audioEncoder != null) {
             audioEncoder.stop();
+            audioEncoder = null;
+        }
+        if (videoEncoder != null) {
             videoEncoder.stop();
             videoEncoder = null;
-            audioEncoder = null;
-
         }
     }
 

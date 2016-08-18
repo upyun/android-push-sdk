@@ -128,5 +128,13 @@ public class MainActivity extends Activity implements View.OnClickListener {
         lp.height = width;
         surface.setLayoutParams(lp);
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mClient != null) {
+            mClient.stopPush();
+        }
+    }
 }
 

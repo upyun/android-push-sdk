@@ -64,6 +64,8 @@ public class AudioEncoder {
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     public void fireAudio(byte[] data, int length) {
 
+//        synchronized (AudioEncoder.class) {
+
         if (mFlvMuxer.getVideoFrameCacheNumber().get() > 5) {
             return;
         }
@@ -83,21 +85,24 @@ public class AudioEncoder {
         }
         MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
         int outputBufferIndex = mediaCodec.dequeueOutputBuffer(bufferInfo, 0);
-        while (outputBufferIndex >= 0) {
+        while (outputBufferIndex >= 0 && PushClient.isPush) {
             ByteBuffer outputBuffer = outputBuffers[outputBufferIndex];
 
             mFlvMuxer.writeSampleData(mAudioTrack, outputBuffer, bufferInfo);
             mediaCodec.releaseOutputBuffer(outputBufferIndex, false);
             outputBufferIndex = mediaCodec.dequeueOutputBuffer(bufferInfo, 0);
         }
+//        }
     }
 
 
     public void stop() {
+//        synchronized (AudioEncoder.class) {
         if (mediaCodec != null) {
             mediaCodec.stop();
             mediaCodec.release();
             mediaCodec = null;
         }
     }
+//    }
 }
