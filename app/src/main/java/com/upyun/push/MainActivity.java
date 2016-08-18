@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.Button;
 
 import com.upyun.hardware.Config;
@@ -33,6 +34,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         surface = (SurfaceView) findViewById(R.id.sv_camera);
         mBtToggle = (Button) findViewById(R.id.bt_toggle);
         mBtSetting = (Button) findViewById(R.id.bt_setting);
