@@ -4,13 +4,29 @@ import android.hardware.Camera;
 
 public class Config {
 
-    public Config(Builder builder) {
+    private static Config config = new Config();
+
+    private Config() {
+        this.resolution = Resolution.NORMAL;
+        this.url = "rtmp://testlivesdk.v0.upaiyun.com/live/upyunab";
+        this.bitRate = 600000;
+        this.fps = 30;
+        this.cameraType = Camera.CameraInfo.CAMERA_FACING_BACK;
+        this.orientation = Orientation.VERTICAL;
+    }
+
+    private Config setConfig(Builder builder) {
         this.resolution = builder.resolution;
         this.bitRate = builder.bitRate;
         this.url = builder.url;
         this.cameraType = builder.cameraType;
         this.fps = builder.fps;
         this.orientation = builder.orientation;
+        return this;
+    }
+
+    public static Config getInstance() {
+        return config;
     }
 
     //分辨率 HIGH(1280*720) NORMAL(640*480) LOW(320*240)
@@ -90,7 +106,7 @@ public class Config {
         }
 
         public Config build() {
-            return new Config(this);
+            return config.setConfig(this);
         }
     }
 }

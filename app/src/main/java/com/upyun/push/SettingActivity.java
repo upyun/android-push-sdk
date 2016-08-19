@@ -3,7 +3,6 @@ package com.upyun.push;
 import android.app.Activity;
 import android.hardware.Camera;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -17,11 +16,12 @@ public class SettingActivity extends Activity implements RadioGroup.OnCheckedCha
     private EditText mEtUrl;
     private EditText mEtFps;
     private EditText mEtBitrate;
-    private RadioGroup mRgResolution;
+    //private RadioGroup mRgResolution;
     private RadioGroup mRgCamera;
     private Button mBtSave;
     private Config.Resolution resolution;
     private int cameraType;
+    private Config config;
 
     @Override
 
@@ -31,20 +31,27 @@ public class SettingActivity extends Activity implements RadioGroup.OnCheckedCha
         mEtUrl = (EditText) findViewById(R.id.et_url);
         mEtFps = (EditText) findViewById(R.id.et_fps);
         mEtBitrate = (EditText) findViewById(R.id.et_bitrate);
-        mRgResolution = (RadioGroup) findViewById(R.id.rg_resolution);
+        //mRgResolution = (RadioGroup) findViewById(R.id.rg_resolution);
         mRgCamera = (RadioGroup) findViewById(R.id.rg_camera);
         mBtSave = (Button) findViewById(R.id.bt_save);
 
-        mRgResolution.setOnCheckedChangeListener(this);
+        //mRgResolution.setOnCheckedChangeListener(this);
         mRgCamera.setOnCheckedChangeListener(this);
         mBtSave.setOnClickListener(this);
         resolution = Config.Resolution.NORMAL;
+
+        config = Config.getInstance();
+        mEtUrl.setText(config.url);
+        mEtFps.setText(String.valueOf(config.fps));
+        mEtBitrate.setText(String.valueOf(config.bitRate));
+        mRgCamera.check(config.cameraType == Camera.CameraInfo.CAMERA_FACING_BACK ?
+                R.id.rb_back_camera : R.id.rb_front_camera);
     }
 
     @Override
     public void onCheckedChanged(RadioGroup group, int checkedId) {
         switch (checkedId) {
-            case R.id.rb_high:
+            /*case R.id.rb_high:
                 resolution = Config.Resolution.HIGH;
                 break;
             case R.id.rb_normal:
@@ -52,7 +59,7 @@ public class SettingActivity extends Activity implements RadioGroup.OnCheckedCha
                 break;
             case R.id.rb_low:
                 resolution = Config.Resolution.LOW;
-                break;
+                break;*/
             case R.id.rb_front_camera:
                 cameraType = Camera.CameraInfo.CAMERA_FACING_FRONT;
                 break;
@@ -70,7 +77,7 @@ public class SettingActivity extends Activity implements RadioGroup.OnCheckedCha
                 int bitRate = Integer.parseInt(mEtBitrate.getText().toString());
                 String url = mEtUrl.getText().toString();
 
-                Log.e(TAG, resolution.name());
+                //Log.e(TAG, resolution.name());
 
                 MyApplication.getInstance().config = new Config.Builder().
                         fps(fps).

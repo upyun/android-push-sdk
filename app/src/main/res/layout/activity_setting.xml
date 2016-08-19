@@ -21,7 +21,7 @@
         android:inputType="textPostalAddress"
         android:text="rtmp://testlivesdk.v0.upaiyun.com/live/upyunab" />
 
-    <RadioGroup
+    <!--<RadioGroup
         android:id="@+id/rg_resolution"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -49,7 +49,7 @@
             android:layout_gravity="center_horizontal"
             android:text="320*240" />
 
-    </RadioGroup>
+    </RadioGroup>-->
 
     <RadioGroup
         android:id="@+id/rg_camera"
