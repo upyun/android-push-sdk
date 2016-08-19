@@ -43,7 +43,7 @@ public class Config {
         Orientation orientation;
 
         public Builder() {
-            url = "rtmp://testlivesdk.v0.upaiyun.com/live/upyunab";
+            url = "rtmp://testlivesdk.v0.upaiyun.com/live/upyunb";
             bitRate = 600000;
             fps = 30;
             cameraType = Camera.CameraInfo.CAMERA_FACING_BACK;

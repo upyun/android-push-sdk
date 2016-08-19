@@ -19,7 +19,7 @@
         android:ems="10"
         android:hint="请输入url"
         android:inputType="textPostalAddress"
-        android:text="rtmp://testlivesdk.v0.upaiyun.com/live/upyunab" />
+        android:text="rtmp://testlivesdk.v0.upaiyun.com/live/upyunb" />
 
     <RadioGroup
         android:id="@+id/rg_resolution"
