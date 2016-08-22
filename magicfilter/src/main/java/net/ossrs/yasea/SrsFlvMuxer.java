@@ -157,13 +157,13 @@ public class SrsFlvMuxer {
             @Override
             public void run() {
                 while (!Thread.interrupted()) {
-                    Log.e(TAG, "isEmpty:" + frameCache.isEmpty());
+//                    Log.e(TAG, "isEmpty:" + frameCache.isEmpty());
                     // Keep at least one audio and video frame in cache to ensure monotonically increasing.
                     while (!frameCache.isEmpty()) {
                         SrsFlvFrame frame = frameCache.poll();
                         try {
                             // only connect when got keyframe.
-                            Log.e(TAG, "is_keyframe" + "frame.is_keyframe()");
+//                            Log.e(TAG, "is_keyframe" + "frame.is_keyframe()");
 
                             if (frame.is_keyframe()) {
                                 connect(rtmpUrl);
@@ -249,7 +249,7 @@ public class SrsFlvMuxer {
         }
 
         if (VIDEO_TRACK == trackIndex) {
-            Log.e(TAG, "write video:" + byteBuf);
+//            Log.e(TAG, "write video:" + byteBuf);
             flv.writeVideoSample(byteBuf, bufferInfo);
         } else {
             flv.writeAudioSample(byteBuf, bufferInfo);
@@ -920,7 +920,7 @@ public class SrsFlvMuxer {
 
             // send each frame.
             while (bb.position() < bi.size) {
-                Log.e(TAG, "bb.position() < bi.size:" + (bb.position() < bi.size));
+//                Log.e(TAG, "bb.position() < bi.size:" + (bb.position() < bi.size));
                 SrsFlvFrameBytes frame = avc.annexb_demux(bb, bi);
 
                 // 5bits, 7.3.1 NAL unit syntax,
@@ -969,7 +969,7 @@ public class SrsFlvMuxer {
                 ibps.add(frame);
             }
 
-            Log.e(TAG, "dts:" + dts + "pts:" + pts);
+//            Log.e(TAG, "dts:" + dts + "pts:" + pts);
 
             write_h264_sps_pps(dts, pts);
 
@@ -1011,7 +1011,7 @@ public class SrsFlvMuxer {
         private void write_h264_ipb_frame(ArrayList<SrsFlvFrameBytes> ibps, int frame_type, int dts, int pts) {
             // when sps or pps not sent, ignore the packet.
             // @see https://github.com/simple-rtmp-server/srs/issues/203
-            Log.e(TAG, "h264_sps_pps_sent:" + h264_sps_pps_sent);
+//            Log.e(TAG, "h264_sps_pps_sent:" + h264_sps_pps_sent);
             if (!h264_sps_pps_sent) {
                 return;
             }
@@ -1024,7 +1024,7 @@ public class SrsFlvMuxer {
             }
 
 
-            Log.e(TAG, "write packet");
+//            Log.e(TAG, "write packet");
             // the timestamp in rtmp message header is dts.
             rtmp_write_packet(SrsCodecFlvTag.Video, dts, frame_type, avc_packet_type, flv_tag);
         }
@@ -1037,7 +1037,7 @@ public class SrsFlvMuxer {
             frame.frame_type = frame_type;
             frame.avc_aac_type = avc_aac_type;
 
-            Log.e(TAG, "add frame:" + frame);
+//            Log.e(TAG, "add frame:" + frame);
             frameCache.add(frame);
             synchronized (txFrameLock) {
                 txFrameLock.notifyAll();
