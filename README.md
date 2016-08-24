@@ -3,7 +3,7 @@
 
 ##SDK 概述
 
-`android-push-sdk` 是一个适用于 Android 平台 RTMP 推流的 SDK，可高度定制化和二次开发，为 Android 开发者提供简单，快捷的接口。
+`android-push-sdk` 是一个适用于 Android 平台 RTMP 推流的 SDK，可高度定制化和二次开发，为 Android 开发者提供简单，快捷的接口。新版 SDK 已经去除ffmpeg 不再依赖 so 库，方便开发者调试和开发，并提供带滤镜版本和不带滤镜版本。
 
 ##推流器功能特性
 
@@ -17,9 +17,20 @@
 
 * 支持音视频目标码率设置
 
-##SDK 使用
+* 支持弱网情况下自动丢帧
 
-* 导入 java lib 库 [uppush](https://github.com/upyun/android-push-sdk/tree/master/uppush/src/main/java)
+* 美颜和其他常用滤镜
+
+## SDK 使用
+
+* 普通版：导入 Android lib Module [uppush](https://github.com/upyun/android-push-sdk/tree/master/uppush)
+
+* 滤镜版本：导入 java lib Module [magicfilter](https://github.com/upyun/android-push-sdk/tree/master/magicfilter)
+
+## SDK 使用DEMO
+* 普通版：运行 Module [APP](https://github.com/upyun/android-push-sdk/tree/master/app)
+
+* 滤镜版：运行 Modeule [magicfilterdemo](https://github.com/upyun/android-push-sdk/tree/master/magicfilterdemo)
 
 ## SDK 使用示例
 
@@ -73,10 +84,6 @@
 ```java
 	 public void setConfig(Config config)
 ```
-
-###DEMO示例：
-
-详见 [demo](https://github.com/upyun/android-push-sdk/blob/master/app/src/main/java/com/upyun/push/MainActivity.java)。
 
 ##SDK 最低要求
 
