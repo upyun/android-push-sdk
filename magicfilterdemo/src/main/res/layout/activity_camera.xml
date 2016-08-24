@@ -24,6 +24,13 @@
             android:padding="5dp">
 
             <ImageView
+                android:id="@+id/btn_flashlight_switch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="10dp"
+                android:src="@drawable/selector_switchflash" />
+
+            <ImageView
                 android:id="@+id/btn_camera_switch"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

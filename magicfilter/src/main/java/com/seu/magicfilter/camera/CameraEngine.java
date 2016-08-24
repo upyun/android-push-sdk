@@ -77,6 +77,25 @@ public class CameraEngine {
         startPreview(surfaceTexture);
     }
 
+    public static void switchFlashlight() {
+        if (camera != null) {
+            Camera.Parameters parameters = camera.getParameters();
+            boolean flashOn = parameters.getFlashMode().equals(Parameters.FLASH_MODE_OFF) ? false : true;
+            if (flashOn) {
+                if (parameters.getSupportedFlashModes().contains(
+                        Parameters.FLASH_MODE_OFF)) {
+                    parameters.setFlashMode(Parameters.FLASH_MODE_OFF);
+                }
+            } else {
+                if (parameters.getSupportedFlashModes().contains(
+                        Parameters.FLASH_MODE_TORCH)) {
+                    parameters.setFlashMode(Parameters.FLASH_MODE_TORCH);
+                }
+            }
+            camera.setParameters(parameters);
+        }
+    }
+
     private static void setDefaultParameters() {
         Parameters parameters = camera.getParameters();
         if (parameters.getSupportedFocusModes().contains(
@@ -145,13 +164,15 @@ public class CameraEngine {
         info.orientation = cameraInfo.orientation;
         info.isFront = cameraID == 1 ? true : false;
 
-        if (info.orientation == 90 || info.orientation == 270) {
+        /*if (info.orientation == 90 || info.orientation == 270) {
             info.previewWidth = size.height;
             info.previewHeight = size.width;
         } else {
             info.previewWidth = size.width;
             info.previewHeight = size.height;
-        }
+        }*/
+        info.previewWidth = size.width;
+        info.previewHeight = size.height;
 
         size = getPictureSize();
 

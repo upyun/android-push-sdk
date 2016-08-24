@@ -1,11 +1,15 @@
 package com.upyun.push;
 
 
+import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.SurfaceView;
 import android.view.View;
@@ -28,7 +32,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
     private Button mBtconvert;
     private Config config;
     private String mNotifyMsg;
-
+    private static final int REQUEST_CODE_PERMISSION_CAMERA = 100;
+    private static final int REQUEST_CODE_PERMISSION_RECORD_AUDIO = 101;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,6 +65,11 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 });
             }
         });
+
+        // check permission for 6.0+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            checkPermission();
+        }
     }
 
     @Override
@@ -136,5 +146,38 @@ public class MainActivity extends Activity implements View.OnClickListener {
             mClient.stopPush();
         }
     }
+
+    // check permission
+    private void checkPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, REQUEST_CODE_PERMISSION_CAMERA);
+        }
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_CODE_PERMISSION_RECORD_AUDIO);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        if (requestCode == REQUEST_CODE_PERMISSION_CAMERA) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.d(TAG, "granted camera permission");
+            } else {
+                Log.e(TAG, "no camera permission");
+            }
+        } else if (requestCode == REQUEST_CODE_PERMISSION_RECORD_AUDIO) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.d(TAG, "granted record audio permission");
+            } else {
+                Log.d(TAG, "no record audio permission");
+            }
+        }
+
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
 }
 
