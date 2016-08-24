@@ -80,7 +80,8 @@ public class CameraEngine {
     public static void switchFlashlight() {
         if (camera != null) {
             Camera.Parameters parameters = camera.getParameters();
-            boolean flashOn = parameters.getFlashMode().equals(Parameters.FLASH_MODE_OFF) ? false : true;
+            String mode = parameters.getFlashMode();
+            boolean flashOn = mode != null ? (mode.equals(Parameters.FLASH_MODE_OFF) ? false : true) : false;
             if (flashOn) {
                 if (parameters.getSupportedFlashModes().contains(
                         Parameters.FLASH_MODE_OFF)) {
