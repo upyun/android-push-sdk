@@ -34,6 +34,7 @@ public class CameraActivity extends Activity {
     private MagicEngine magicEngine;
     private boolean isRecording = false;
     private ImageView btn_shutter;
+    private ImageView btn_flashlight;
 
     private ObjectAnimator animator;
 
@@ -118,6 +119,10 @@ public class CameraActivity extends Activity {
         findViewById(R.id.btn_camera_switch).setOnClickListener(btn_listener);
         findViewById(R.id.btn_camera_beauty).setOnClickListener(btn_listener);
 
+        btn_flashlight = (ImageView) findViewById(R.id.btn_flashlight_switch);
+        btn_flashlight.setOnClickListener(btn_listener);
+        btn_flashlight.setEnabled(false);
+
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
         linearLayoutManager.setOrientation(LinearLayoutManager.HORIZONTAL);
         mFilterListView.setLayoutManager(linearLayoutManager);
@@ -175,6 +180,7 @@ public class CameraActivity extends Activity {
                     break;
                 case R.id.btn_camera_switch:
                     magicEngine.switchCamera();
+                    btn_flashlight.setEnabled(!btn_flashlight.isEnabled());
                     break;
                 case R.id.btn_camera_beauty:
                     new AlertDialog.Builder(CameraActivity.this)
@@ -190,6 +196,9 @@ public class CameraActivity extends Activity {
                     break;
                 case R.id.btn_camera_closefilter:
                     hideFilters();
+                    break;
+                case R.id.btn_flashlight_switch:
+                    magicEngine.switchFlashlight();
                     break;
             }
         }

@@ -48,6 +48,8 @@ public class MagicEngine {
         CameraEngine.switchCamera();
     }
 
+    public void switchFlashlight() { CameraEngine.switchFlashlight(); }
+
     public static class Builder {
 
         public MagicEngine build(MagicBaseView magicBaseView) {
