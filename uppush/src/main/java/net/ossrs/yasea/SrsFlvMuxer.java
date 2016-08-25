@@ -512,6 +512,14 @@ public class SrsFlvMuxer {
         public int size;
     }
 
+    public boolean isSpsPpsSent(){
+        if(flv!=null){
+            return flv.isSpsPpsSent();
+        }
+        return false;
+    }
+
+
     /**
      * the muxed flv frame.
      */
@@ -963,6 +971,10 @@ public class SrsFlvMuxer {
             write_h264_sps_pps(dts, pts);
 
             write_h264_ipb_frame(ibps, frame_type, dts, pts);
+        }
+
+        private boolean isSpsPpsSent() {
+            return h264_sps_pps_sent;
         }
 
         private void write_h264_sps_pps(int dts, int pts) {
