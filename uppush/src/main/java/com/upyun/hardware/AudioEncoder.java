@@ -66,10 +66,6 @@ public class AudioEncoder {
 
 //        synchronized (AudioEncoder.class) {
 
-        if (PushClient.MODE == PushClient.MODE_VIDEO_ONLY) {
-            return;
-        }
-
         if (mFlvMuxer.getVideoFrameCacheNumber().get() > 5) {
             return;
         }
