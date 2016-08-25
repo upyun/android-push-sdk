@@ -973,7 +973,7 @@ public class SrsFlvMuxer {
             write_h264_ipb_frame(ibps, frame_type, dts, pts);
         }
 
-        private boolean isSpsPpsSent() {
+        public boolean isSpsPpsSent() {
             return h264_sps_pps_sent;
         }
 

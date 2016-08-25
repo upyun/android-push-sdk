@@ -34,6 +34,8 @@ public class VideoEncoder {
     private byte[] mFlippedFrameBuffer;
     private int mVideoTrack;
     private SrsFlvMuxer mflvmuxer;
+    private boolean isStarted = false;
+
 
     public VideoEncoder(SrsFlvMuxer flvMuxer) {
         mflvmuxer = flvMuxer;
@@ -106,6 +108,10 @@ public class VideoEncoder {
         synchronized (VideoEncoder.class) {
 
             if (mflvmuxer.getVideoFrameCacheNumber().get() > 5) {
+                return;
+            }
+
+            if (mflvmuxer.isSpsPpsSent() && PushClient.MODE == PushClient.MODE_AUDIO_ONLY){
                 return;
             }
 

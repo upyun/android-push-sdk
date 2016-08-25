@@ -32,6 +32,12 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
     private boolean aloop = false;
     private Thread aworker = null;
     protected static boolean isPush = false;
+
+    protected final static int MODE_NORMAL = 1;
+    protected final static int MODE_VIDEO_ONLY = 2;
+    protected final static int MODE_AUDIO_ONLY = 3;
+
+    protected static int MODE = MODE_NORMAL;
     protected static int CAMERA_TYPE;
 
     private SrsFlvMuxer mSrsFlvMuxer = new SrsFlvMuxer(new RtmpPublisher.EventHandler() {
