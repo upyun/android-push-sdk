@@ -10,8 +10,10 @@ import android.util.Log;
 import com.seu.magicfilter.utils.MagicParams;
 
 import java.io.IOException;
+import java.util.List;
 
 public class CameraEngine {
+    private static final String TAG = "CameraEngine";
     private static Camera camera = null;
     private static int cameraID = 1;
     private static SurfaceTexture surfaceTexture;
@@ -81,19 +83,26 @@ public class CameraEngine {
         if (camera != null) {
             Camera.Parameters parameters = camera.getParameters();
             String mode = parameters.getFlashMode();
-            boolean flashOn = mode != null ? (mode.equals(Parameters.FLASH_MODE_OFF) ? false : true) : false;
-            if (flashOn) {
-                if (parameters.getSupportedFlashModes().contains(
-                        Parameters.FLASH_MODE_OFF)) {
-                    parameters.setFlashMode(Parameters.FLASH_MODE_OFF);
+            if (mode != null) {
+                if (mode.equals(Parameters.FLASH_MODE_OFF)) {
+                    List<String> modes = parameters.getSupportedFlashModes();
+                    if (modes != null) {
+                        if (modes.contains(Parameters.FLASH_MODE_TORCH)) {
+                            parameters.setFlashMode(Parameters.FLASH_MODE_TORCH);
+                        }
+                    }
+                } else {
+                    List<String> modes = parameters.getSupportedFlashModes();
+                    if (modes != null) {
+                        if (modes.contains(Parameters.FLASH_MODE_OFF)) {
+                            parameters.setFlashMode(Parameters.FLASH_MODE_OFF);
+                        }
+                    }
                 }
+                camera.setParameters(parameters);
             } else {
-                if (parameters.getSupportedFlashModes().contains(
-                        Parameters.FLASH_MODE_TORCH)) {
-                    parameters.setFlashMode(Parameters.FLASH_MODE_TORCH);
-                }
+                Log.e(TAG, "The device does not support control of a flashlight!");
             }
-            camera.setParameters(parameters);
         }
     }
 
@@ -103,6 +112,7 @@ public class CameraEngine {
                 Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
             parameters.setFocusMode(Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
         }
+
 //        Size previewSize = CameraUtils.getLargePreviewSize(camera);
 //        parameters.setPreviewSize(previewSize.width, previewSize.height);
         parameters.setPreviewSize(MagicParams.WIDTH, MagicParams.HEIGHT);
