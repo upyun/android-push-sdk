@@ -18,10 +18,9 @@
         android:layout_gravity="center_horizontal"
         android:ems="10"
         android:hint="请输入url"
-        android:inputType="textPostalAddress"
-        android:text="rtmp://testlivesdk.v0.upaiyun.com/live/upyunb" />
+        android:inputType="textPostalAddress" />
 
-    <!--<RadioGroup
+    <RadioGroup
         android:id="@+id/rg_resolution"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -49,7 +48,7 @@
             android:layout_gravity="center_horizontal"
             android:text="320*240" />
 
-    </RadioGroup>-->
+    </RadioGroup>
 
     <RadioGroup
         android:id="@+id/rg_camera"
@@ -71,6 +70,28 @@
             android:layout_gravity="center_horizontal"
             android:checked="true"
             android:text="后置摄像头" />
+
+    </RadioGroup>
+
+    <RadioGroup
+        android:id="@+id/rg_orientation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <RadioButton
+            android:id="@+id/rb_horizontal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="水平" />
+
+        <RadioButton
+            android:id="@+id/rb_vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="竖直" />
 
     </RadioGroup>
 

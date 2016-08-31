@@ -104,6 +104,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 }
                 break;
             case R.id.bt_setting:
+                mClient.stopPush();
+                mBtToggle.setText("start");
                 startActivity(new Intent(this, SettingActivity.class));
                 break;
 

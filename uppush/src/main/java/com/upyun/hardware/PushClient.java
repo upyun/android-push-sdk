@@ -37,7 +37,9 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
     protected final static int MODE_VIDEO_ONLY = 2;
     protected final static int MODE_AUDIO_ONLY = 3;
 
+    //    protected static int MODE = MODE_NORMAL;
     protected static int MODE = MODE_NORMAL;
+    //    protected static int MODE = MODE_VIDEO_ONLY;
     protected static int CAMERA_TYPE;
 
     private SrsFlvMuxer mSrsFlvMuxer = new SrsFlvMuxer(new RtmpPublisher.EventHandler() {
@@ -137,9 +139,7 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            if (config.orientation == Config.Orientation.VERTICAL) {
-                mCamera.setDisplayOrientation(90);
-            }
+            mCamera.setDisplayOrientation(90);
             mCamera.startPreview();
         }
 
@@ -216,7 +216,7 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         if (mCamera == null) {
             startCamera(mSurface.getHolder());
         }
-        videoEncoder = new VideoEncoder(mSrsFlvMuxer);
+        videoEncoder = new VideoEncoder(mSrsFlvMuxer, config);
         audioEncoder = new AudioEncoder(mSrsFlvMuxer);
         videoEncoder.setVideoOptions(width,
                 height, config.bitRate, config.fps);
