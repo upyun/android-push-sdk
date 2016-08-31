@@ -96,8 +96,10 @@ public class VideoEncoder {
                         MediaCodec.CONFIGURE_FLAG_ENCODE);
                 mediaCodec.start();
 
-                mVideoTrack = mflvmuxer.addTrack(mediaFormat);
-                mflvmuxer.setVideoResolution(mPushWidth, mPushHeight);
+                if (PushClient.MODE != PushClient.MODE_AUDIO_ONLY) {
+                    mVideoTrack = mflvmuxer.addTrack(mediaFormat);
+                    mflvmuxer.setVideoResolution(mPushWidth, mPushHeight);
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -107,11 +109,11 @@ public class VideoEncoder {
     public void fireVideo(byte[] data) {
         synchronized (VideoEncoder.class) {
 
-            if (mflvmuxer.getVideoFrameCacheNumber().get() > 5) {
+            if (PushClient.MODE == PushClient.MODE_AUDIO_ONLY) {
                 return;
             }
 
-            if (mflvmuxer.isSpsPpsSent() && PushClient.MODE == PushClient.MODE_AUDIO_ONLY){
+            if (mflvmuxer.getVideoFrameCacheNumber().get() > 5) {
                 return;
             }
 

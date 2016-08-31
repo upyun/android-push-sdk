@@ -55,7 +55,9 @@ public class AudioEncoder {
             mediaCodec.configure(mediaFormat, null, null,
                     MediaCodec.CONFIGURE_FLAG_ENCODE);
             mediaCodec.start();
-            mAudioTrack = mFlvMuxer.addTrack(mediaFormat);
+            if (PushClient.MODE != PushClient.MODE_VIDEO_ONLY) {
+                mAudioTrack = mFlvMuxer.addTrack(mediaFormat);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -63,8 +65,6 @@ public class AudioEncoder {
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     public void fireAudio(byte[] data, int length) {
-
-//        synchronized (AudioEncoder.class) {
 
         if (PushClient.MODE == PushClient.MODE_VIDEO_ONLY) {
             return;
@@ -96,17 +96,14 @@ public class AudioEncoder {
             mediaCodec.releaseOutputBuffer(outputBufferIndex, false);
             outputBufferIndex = mediaCodec.dequeueOutputBuffer(bufferInfo, 0);
         }
-//        }
     }
 
 
     public void stop() {
-//        synchronized (AudioEncoder.class) {
         if (mediaCodec != null) {
             mediaCodec.stop();
             mediaCodec.release();
             mediaCodec = null;
         }
     }
-//    }
 }

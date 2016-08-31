@@ -49,3 +49,6 @@ out
 gen
 /src/main/jni/
 /src/main/obj/
+
+.DS_Store
+
