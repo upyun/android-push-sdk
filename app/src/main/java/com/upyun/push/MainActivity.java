@@ -82,7 +82,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
             public boolean onTouch(View v, MotionEvent event) {
                 if (event.getAction() == MotionEvent.ACTION_UP) {
                     if (mClient != null) {
-                        mClient.focusOnTouch();
+                        //mClient.focusOnTouch();
                     }
                 }
                 return true;

@@ -131,10 +131,10 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
             int[] range = findClosestFpsRange(config.fps, parameters.getSupportedPreviewFpsRange());
             parameters.setPreviewFpsRange(range[0], range[1]);
             parameters.setPreviewFormat(ImageFormat.NV21);
-            /*if (parameters.getSupportedFocusModes() != null &&
+            if (parameters.getSupportedFocusModes() != null &&
                 parameters.getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
                 parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
-            }*/
+            }
             mCamera.setParameters(parameters);
             mCamera.setPreviewCallback(PushClient.this);
             mCamera.addCallbackBuffer(mYuvFrameBuffer);
@@ -371,14 +371,14 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
                     }
 
                     //resume the continuous focus
-                    /*Camera.Parameters parameters = camera.getParameters();
+                    Camera.Parameters parameters = camera.getParameters();
                     camera.cancelAutoFocus();
                     if (parameters.getFocusMode() != Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE &&
                             parameters.getSupportedFocusModes() != null &&
                             parameters.getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
                         parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
                         camera.setParameters(parameters);
-                    }*/
+                    }
                 }
             });
         }
