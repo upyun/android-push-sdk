@@ -131,6 +131,10 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
             int[] range = findClosestFpsRange(config.fps, parameters.getSupportedPreviewFpsRange());
             parameters.setPreviewFpsRange(range[0], range[1]);
             parameters.setPreviewFormat(ImageFormat.NV21);
+            /*if (parameters.getSupportedFocusModes() != null &&
+                parameters.getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
+                parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+            }*/
             mCamera.setParameters(parameters);
             mCamera.setPreviewCallback(PushClient.this);
             mCamera.addCallbackBuffer(mYuvFrameBuffer);
@@ -331,17 +335,78 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
     public void surfaceDestroyed(SurfaceHolder holder) {
     }
 
-    public void covertCamera() {
-
-        if (config.cameraType == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-            config.cameraType = Camera.CameraInfo.CAMERA_FACING_BACK;
-        } else {
-            config.cameraType = Camera.CameraInfo.CAMERA_FACING_FRONT;
-        }
+    public boolean covertCamera() {
+        boolean converted = false;
         if (isPush) {
+            if (config.cameraType == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+                config.cameraType = Camera.CameraInfo.CAMERA_FACING_BACK;
+            } else {
+                config.cameraType = Camera.CameraInfo.CAMERA_FACING_FRONT;
+            }
             stopCamera();
             startCamera(mSurface.getHolder());
+            converted = true;
+        }
+        return converted;
+    }
+
+    public void focusOnTouch() {
+        if (mCamera != null) {
+            Camera.Parameters parameters = mCamera.getParameters();
+            if (!parameters.getFocusMode().equals(Camera.Parameters.FOCUS_MODE_AUTO) &&
+                    parameters.getSupportedFocusModes() != null &&
+                    parameters.getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
+                parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+                mCamera.setParameters(parameters);
+            }
+
+            mCamera.cancelAutoFocus();
+            mCamera.autoFocus(new Camera.AutoFocusCallback() {
+                @Override
+                public void onAutoFocus(boolean success, Camera camera) {
+                    if (success) {
+                        Log.e(TAG, "auto focus success");
+                    } else {
+                        Log.e(TAG, "auto focus failed");
+                    }
+
+                    //resume the continuous focus
+                    /*Camera.Parameters parameters = camera.getParameters();
+                    camera.cancelAutoFocus();
+                    if (parameters.getFocusMode() != Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE &&
+                            parameters.getSupportedFocusModes() != null &&
+                            parameters.getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
+                        parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+                        camera.setParameters(parameters);
+                    }*/
+                }
+            });
         }
     }
 
+    // flash light
+    public void toggleFlashlight() {
+        if (mCamera != null) {
+            Camera.Parameters parameters = mCamera.getParameters();
+            if (parameters.getFlashMode() != null) {
+                if (parameters.getFlashMode().equals(Camera.Parameters.FLASH_MODE_OFF)) {
+                    if (parameters.getSupportedFlashModes() != null &&
+                            parameters.getSupportedFlashModes().contains(Camera.Parameters.FLASH_MODE_TORCH)) {
+                        parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+                    }
+                } else {
+                    if (parameters.getSupportedFlashModes() != null &&
+                            parameters.getSupportedFlashModes().contains(Camera.Parameters.FLASH_MODE_OFF)) {
+                        parameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+                    }
+                }
+                mCamera.setParameters(parameters);
+            } else {
+                Log.e(TAG, "The device does not support control of a flashlight!");
+            }
+        }
+    }
 }
+
+
+

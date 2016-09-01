@@ -122,6 +122,7 @@ public class CameraEngine {
         parameters.setPictureSize(MagicParams.WIDTH, MagicParams.HEIGHT);
 //        parameters.setPictureSize(480, 640);
         parameters.setRotation(90);
+        camera.cancelAutoFocus();
         camera.setParameters(parameters);
     }
 
@@ -191,5 +192,40 @@ public class CameraEngine {
         info.pictureWidth = size.width;
         info.pictureHeight = size.height;
         return info;
+    }
+
+    public static void focusOnTouch() {
+
+        if (camera != null) {
+            Parameters parameters = camera.getParameters();
+            if (!parameters.getFocusMode().equals(Parameters.FOCUS_MODE_AUTO) &&
+                    parameters.getSupportedFocusModes() != null &&
+                    parameters.getSupportedFocusModes().contains(Parameters.FOCUS_MODE_AUTO)) {
+                parameters.setFocusMode(Parameters.FOCUS_MODE_AUTO);
+                camera.setParameters(parameters);
+            }
+
+            camera.cancelAutoFocus();
+            camera.autoFocus(new Camera.AutoFocusCallback() {
+                @Override
+                public void onAutoFocus(boolean success, Camera camera) {
+                    if (success) {
+                        Log.e(TAG, "auto focus success");
+                    } else {
+                        Log.e(TAG, "auto focus failed");
+                    }
+
+                    //resume the continuous focus
+                    Parameters parameters = camera.getParameters();
+                    camera.cancelAutoFocus();
+                    if (parameters.getFocusMode() != Parameters.FOCUS_MODE_CONTINUOUS_PICTURE &&
+                            parameters.getSupportedFocusModes() != null &&
+                            parameters.getSupportedFocusModes().contains(Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
+                        parameters.setFocusMode(Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+                        camera.setParameters(parameters);
+                    }
+                }
+            });
+        }
     }
 }

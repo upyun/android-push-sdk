@@ -50,6 +50,8 @@ public class MagicEngine {
 
     public void switchFlashlight() { CameraEngine.switchFlashlight(); }
 
+    public void focusOnTouch() { CameraEngine.focusOnTouch(); }
+
     public static class Builder {
 
         public MagicEngine build(MagicBaseView magicBaseView) {

@@ -9,11 +9,24 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.upyun.push.MainActivity">
 
-    <SurfaceView
-        android:id="@+id/sv_camera"
-        android:layout_width="720px"
-        android:layout_height="1280px"
-        android:layout_centerInParent="true" />
+
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true">
+        <SurfaceView
+            android:id="@+id/sv_camera"
+            android:layout_width="720px"
+            android:layout_height="1280px"
+            android:layout_gravity="center"/>
+
+        <ImageView
+            android:id="@+id/img_flash"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:src="@drawable/selector_switchflash"/>
+    </FrameLayout>
 
     <LinearLayout
         android:layout_width="match_parent"

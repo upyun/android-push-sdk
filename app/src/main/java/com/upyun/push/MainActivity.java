@@ -11,11 +11,13 @@ import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.ImageView;
 
 import com.upyun.hardware.Config;
 import com.upyun.hardware.PushClient;
@@ -30,6 +32,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
     private Button mBtToggle;
     private Button mBtSetting;
     private Button mBtconvert;
+    private ImageView mImgFlash;
     private Config config;
     private String mNotifyMsg;
     private static final int REQUEST_CODE_PERMISSION_CAMERA = 100;
@@ -44,9 +47,12 @@ public class MainActivity extends Activity implements View.OnClickListener {
         mBtToggle = (Button) findViewById(R.id.bt_toggle);
         mBtSetting = (Button) findViewById(R.id.bt_setting);
         mBtconvert = (Button) findViewById(R.id.bt_convert);
+        mImgFlash = (ImageView) findViewById(R.id.img_flash);
         mBtToggle.setOnClickListener(this);
         mBtSetting.setOnClickListener(this);
         mBtconvert.setOnClickListener(this);
+        mImgFlash.setOnClickListener(this);
+        mImgFlash.setEnabled(true);
 
         mClient = new PushClient(surface);
 
@@ -70,6 +76,18 @@ public class MainActivity extends Activity implements View.OnClickListener {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             checkPermission();
         }
+
+        surface.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if (event.getAction() == MotionEvent.ACTION_UP) {
+                    if (mClient != null) {
+                        mClient.focusOnTouch();
+                    }
+                }
+                return true;
+            }
+        });
     }
 
     @Override
@@ -110,7 +128,14 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 break;
 
             case R.id.bt_convert:
-                mClient.covertCamera();
+                boolean converted = mClient.covertCamera();
+                if (converted) {
+                    mImgFlash.setEnabled(!mImgFlash.isEnabled());
+                }
+                break;
+
+            case R.id.img_flash:
+                mClient.toggleFlashlight();
                 break;
         }
     }
