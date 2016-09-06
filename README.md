@@ -22,8 +22,16 @@
 
 ## SDK 使用
 
-* 普通版：导入 Android lib Module [uppush](https://github.com/upyun/android-push-sdk/tree/master/uppush)
+* 普通版：
 
+   1.导入 Android lib Module [uppush](https://github.com/upyun/android-push-sdk/tree/master/uppush)
+
+   2.SDK 已经上传 Jcenter，Android Studio 的用户可以直接在 gradle 中添加一条 dependencies:
+
+   ```
+   compile 'com.upyun:uppush:0.9.1'
+
+   ```
 * 滤镜版本：导入 java lib Module [magicfilter](https://github.com/upyun/android-push-sdk/tree/master/magicfilter)
 
 ## SDK 使用DEMO
