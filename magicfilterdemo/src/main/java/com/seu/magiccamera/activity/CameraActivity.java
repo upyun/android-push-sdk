@@ -146,7 +146,7 @@ public class CameraActivity extends Activity {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 if (event.getAction() == MotionEvent.ACTION_UP) {
-                    magicEngine.focusOnTouch();
+                    //magicEngine.focusOnTouch();
                 }
                 return true;
             }
