@@ -30,7 +30,6 @@
 
    ```
    compile 'com.upyun:uppush:0.9.1'
-
    ```
 * 滤镜版本：导入 java lib Module [magicfilter](https://github.com/upyun/android-push-sdk/tree/master/magicfilter)
 
