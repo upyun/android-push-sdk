@@ -22,8 +22,16 @@
 
 ## SDK 使用
 
-* 普通版：导入 Android lib Module [uppush](https://github.com/upyun/android-push-sdk/tree/master/uppush)
+* 普通版：
 
+   1.导入 Android lib Module [uppush](https://github.com/upyun/android-push-sdk/tree/master/uppush)
+
+   2.SDK 已经上传 Jcenter，Android Studio 的用户可以直接在 gradle 中添加一条 dependencies:
+
+   ```
+   compile 'com.upyun:uppush:0.9.1'
+
+   ```
 * 滤镜版本：导入 java lib Module [magicfilter](https://github.com/upyun/android-push-sdk/tree/master/magicfilter)
 
 ## SDK 使用DEMO
@@ -173,6 +181,39 @@ md5 之后： `cd07624363efbcc102e772c2e270e811`
 取中间 8 位加 `etime` ：`bcc102e71462513671` 
 
 最后 url ： `url`
+
+## 版本历史
+
+0.1.0 基本的直播推流器
+
+* 推流器支持rtmp推流
+
+0.2.0 完善推流功能
+
+* 修复音频录制bug
+
+* 支持自定义推流参数
+
+* 支持后台推流
+
+0.3.0 修改传输层
+
+* 更改数据传输层，去除ffmpeg的依赖
+
+* 推流支持自由剪裁像素尺寸
+
+* 增加异常处理，避免crash
+
+0.4.0 滤镜功能
+
+* 增加滤镜版本推流器和相关demo
+
+* 增加对焦和闪光灯
+
+* 增加单音频推流
+
+* 修复其他bug
+
 
 ##反馈与建议
 
