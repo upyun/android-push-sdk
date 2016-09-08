@@ -8,10 +8,10 @@ import android.util.AttributeSet;
 import com.seu.magicfilter.filter.base.gpuimage.GPUImageFilter;
 import com.seu.magicfilter.filter.helper.MagicFilterFactory;
 import com.seu.magicfilter.filter.helper.MagicFilterType;
+import com.seu.magicfilter.helper.SavePictureTask;
 import com.seu.magicfilter.utils.OpenGlUtils;
 import com.seu.magicfilter.utils.Rotation;
 import com.seu.magicfilter.utils.TextureRotationUtil;
-import com.seu.magicfilter.helper.SavePictureTask;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -57,6 +57,8 @@ public abstract class MagicBaseView extends GLSurfaceView implements GLSurfaceVi
     protected int imageWidth, imageHeight;
 
     protected ScaleType scaleType = ScaleType.FIT_XY;
+
+    protected boolean updateSharedContext = false;
 
     public MagicBaseView(Context context) {
         this(context, null);
@@ -109,6 +111,7 @@ public abstract class MagicBaseView extends GLSurfaceView implements GLSurfaceVi
     }
 
     public void setFilter(final MagicFilterType type){
+        updateSharedContext = true;
         queueEvent(new Runnable() {
             @Override
             public void run() {

@@ -102,11 +102,11 @@ public class MagicCameraView extends MagicBaseView {
                 case RECORDING_OFF:
                     CameraInfo info = CameraEngine.getCameraInfo();
                     Log.e("CameraInfo:", info.previewWidth + "::" + info.previewHeight);
-                    videoEncoder.setPreviewSize(info.previewWidth, info.previewHeight);
+                    videoEncoder.setPreviewSize(info.previewHeight, info.previewWidth);
                     videoEncoder.setTextureBuffer(gLTextureBuffer);
                     videoEncoder.setCubeBuffer(gLCubeBuffer);
                     videoEncoder.startRecording(new TextureMovieEncoder.EncoderConfig(
-                            outputPath, info.previewWidth, info.previewHeight,
+                            outputPath, info.previewHeight, info.previewWidth,
                             1000000, EGL14.eglGetCurrentContext(),
                             info));
                     recordingStatus = RECORDING_ON;
@@ -116,6 +116,10 @@ public class MagicCameraView extends MagicBaseView {
                     recordingStatus = RECORDING_ON;
                     break;
                 case RECORDING_ON:
+                    if (updateSharedContext) {
+                        videoEncoder.updateSharedContext2(EGL14.eglGetCurrentContext());
+                        updateSharedContext = false;
+                    }
                     break;
                 default:
                     throw new RuntimeException("unknown status " + recordingStatus);
