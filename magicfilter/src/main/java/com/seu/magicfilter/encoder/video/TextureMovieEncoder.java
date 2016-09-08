@@ -188,6 +188,13 @@ public class TextureMovieEncoder implements Runnable {
     }
 
     /**
+     * Tells the video recorder to refresh its EGL surface immediately.  (Call from non-encoder thread.)
+     */
+    public void updateSharedContext2(EGLContext sharedContext) {
+        mHandler.sendMessageAtFrontOfQueue(mHandler.obtainMessage(MSG_UPDATE_SHARED_CONTEXT, sharedContext));
+    }
+
+    /**
      * Tells the video recorder that a new frame is available.  (Call from non-encoder thread.)
      * <p>
      * This function sends a message and returns immediately.  This isn't sufficient -- we
