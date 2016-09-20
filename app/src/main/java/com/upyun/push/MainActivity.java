@@ -12,9 +12,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.MotionEvent;
-import android.view.SurfaceView;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -27,7 +25,7 @@ import java.io.IOException;
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 public class MainActivity extends Activity implements View.OnClickListener {
     private static final String TAG = "MainActivity";
-    private SurfaceView surface;
+    private SurfaceRenderView surface;
     private PushClient mClient;
     private Button mBtToggle;
     private Button mBtSetting;
@@ -43,7 +41,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        surface = (SurfaceView) findViewById(R.id.sv_camera);
+        surface = (SurfaceRenderView) findViewById(R.id.sv_camera);
         mBtToggle = (Button) findViewById(R.id.bt_toggle);
         mBtSetting = (Button) findViewById(R.id.bt_setting);
         mBtconvert = (Button) findViewById(R.id.bt_convert);
@@ -140,7 +138,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
         }
     }
 
-    private void changeSurfaceSize(SurfaceView surface, Config config) {
+    private void changeSurfaceSize(SurfaceRenderView surface, Config config) {
         int width = 1280;
         int height = 720;
 
@@ -150,20 +148,21 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 height = 720;
                 break;
             case NORMAL:
-//                width = 640;
-//                height = 480;
-//                break;
+                width = 640;
+                height = 480;
+                break;
             case LOW:
-                width = 320 * 3;
-                height = 240 * 3;
+                width = 320;
+                height = 240;
                 break;
         }
 
-        ViewGroup.LayoutParams lp = surface.getLayoutParams();
-
-        lp.width = height;
-        lp.height = width;
-        surface.setLayoutParams(lp);
+//        ViewGroup.LayoutParams lp = surface.getLayoutParams();
+//
+//        lp.width = height;
+//        lp.height = width;
+//        surface.setLayoutParams(lp);
+        surface.setVideoSize(height, width);
     }
 
     @Override

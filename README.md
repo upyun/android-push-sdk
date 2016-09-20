@@ -30,7 +30,6 @@
 
    ```
    compile 'com.upyun:uppush:0.9.1'
-
    ```
 * 滤镜版本：导入 java lib Module [magicfilter](https://github.com/upyun/android-push-sdk/tree/master/magicfilter)
 
@@ -214,6 +213,9 @@ md5 之后： `cd07624363efbcc102e772c2e270e811`
 
 * 修复其他bug
 
+0.9.1 预览界面比例适应（9.18）
+
+* 预览界面比例自适应，修复全屏时图像拉伸问题
 
 ##反馈与建议
 
