@@ -1,7 +1,5 @@
 package com.seu.magicfilter.filter.base;
 
-import java.nio.FloatBuffer;
-
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 
@@ -9,6 +7,8 @@ import com.seu.magicfilter.R;
 import com.seu.magicfilter.filter.base.gpuimage.GPUImageFilter;
 import com.seu.magicfilter.utils.MagicParams;
 import com.seu.magicfilter.utils.OpenGlUtils;
+
+import java.nio.FloatBuffer;
 
 public class MagicCameraInputFilter extends GPUImageFilter{
 
@@ -69,11 +69,13 @@ public class MagicCameraInputFilter extends GPUImageFilter{
 
     @Override
     public int onDrawFrame(int textureId, FloatBuffer vertexBuffer, FloatBuffer textureBuffer) {
-        GLES20.glUseProgram(mGLProgId);
-        runPendingOnDrawTasks();
+
         if(!isInitialized()) {
             return OpenGlUtils.NOT_INIT;
         }
+        runPendingOnDrawTasks();
+        GLES20.glUseProgram(mGLProgId);
+
         vertexBuffer.position(0);
         GLES20.glVertexAttribPointer(mGLAttribPosition, 2, GLES20.GL_FLOAT, false, 0, vertexBuffer);
         GLES20.glEnableVertexAttribArray(mGLAttribPosition);
