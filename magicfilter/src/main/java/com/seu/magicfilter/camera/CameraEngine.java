@@ -15,7 +15,7 @@ import java.util.List;
 public class CameraEngine {
     private static final String TAG = "CameraEngine";
     private static Camera camera = null;
-    private static int cameraID = 1;
+    private static int cameraID = 0;
     private static SurfaceTexture surfaceTexture;
 
     public static Camera getCamera() {
@@ -168,7 +168,7 @@ public class CameraEngine {
     public static com.seu.magicfilter.camera.utils.CameraInfo getCameraInfo() {
         com.seu.magicfilter.camera.utils.CameraInfo info = new com.seu.magicfilter.camera.utils.CameraInfo();
         Size size = getPreviewSize();
-        Log.e("getPreviewSize:", size.width + "::" + size.height);
+        Log.d("getPreviewSize:", size.width + "::" + size.height);
 
         CameraInfo cameraInfo = new CameraInfo();
         Camera.getCameraInfo(cameraID, cameraInfo);
@@ -188,7 +188,7 @@ public class CameraEngine {
 
         size = getPictureSize();
 
-        Log.e("getPictureSize:", size.width + "::" + size.height);
+        Log.d("getPictureSize:", size.width + "::" + size.height);
         info.pictureWidth = size.width;
         info.pictureHeight = size.height;
         return info;

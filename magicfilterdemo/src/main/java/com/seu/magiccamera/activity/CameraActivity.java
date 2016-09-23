@@ -122,7 +122,7 @@ public class CameraActivity extends Activity {
 
         btn_flashlight = (ImageView) findViewById(R.id.btn_flashlight_switch);
         btn_flashlight.setOnClickListener(btn_listener);
-        btn_flashlight.setEnabled(false);
+        btn_flashlight.setEnabled(true);
 
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
         linearLayoutManager.setOrientation(LinearLayoutManager.HORIZONTAL);

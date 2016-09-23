@@ -467,7 +467,7 @@ public class TextureMovieEncoder implements Runnable {
         if (filter != null) {
             filter.destroy();
              filter = null;
-            type = MagicFilterType.NONE;
+            //type = MagicFilterType.NONE;//for next record
         }
     }
 

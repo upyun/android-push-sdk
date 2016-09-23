@@ -101,7 +101,7 @@ public class MagicCameraView extends MagicBaseView {
             switch (recordingStatus) {
                 case RECORDING_OFF:
                     CameraInfo info = CameraEngine.getCameraInfo();
-                    Log.e("CameraInfo:", info.previewWidth + "::" + info.previewHeight);
+                    Log.d("CameraInfo:", info.previewWidth + "::" + info.previewHeight);
                     videoEncoder.setPreviewSize(info.previewHeight, info.previewWidth);
                     videoEncoder.setTextureBuffer(gLTextureBuffer);
                     videoEncoder.setCubeBuffer(gLCubeBuffer);
