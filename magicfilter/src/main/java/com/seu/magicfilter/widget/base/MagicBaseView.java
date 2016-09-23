@@ -58,7 +58,7 @@ public abstract class MagicBaseView extends GLSurfaceView implements GLSurfaceVi
 
     protected ScaleType scaleType = ScaleType.FIT_XY;
 
-    protected boolean updateSharedContext = false;
+    protected boolean filterChanged = false;
 
     public MagicBaseView(Context context) {
         this(context, null);
@@ -111,7 +111,6 @@ public abstract class MagicBaseView extends GLSurfaceView implements GLSurfaceVi
     }
 
     public void setFilter(final MagicFilterType type){
-        updateSharedContext = true;
         queueEvent(new Runnable() {
             @Override
             public void run() {
@@ -124,6 +123,7 @@ public abstract class MagicBaseView extends GLSurfaceView implements GLSurfaceVi
                 onFilterChanged();
             }
         });
+        filterChanged = true;
         requestRender();
     }
 

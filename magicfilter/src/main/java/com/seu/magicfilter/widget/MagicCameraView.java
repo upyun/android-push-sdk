@@ -116,9 +116,9 @@ public class MagicCameraView extends MagicBaseView {
                     recordingStatus = RECORDING_ON;
                     break;
                 case RECORDING_ON:
-                    if (updateSharedContext) {
-                        videoEncoder.updateSharedContext2(EGL14.eglGetCurrentContext());
-                        updateSharedContext = false;
+                    if (filterChanged) {
+                        videoEncoder.changeFilter();
+                        filterChanged = false;
                     }
                     break;
                 default:

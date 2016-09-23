@@ -69,6 +69,7 @@ public class TextureMovieEncoder implements Runnable {
     private static final int MSG_SET_TEXTURE_ID = 3;
     private static final int MSG_UPDATE_SHARED_CONTEXT = 4;
     private static final int MSG_QUIT = 5;
+    private static final int MSG_FILTER_CHANGE = 6;
 
     // ----- accessed exclusively by encoder thread -----
     private WindowSurface mInputWindowSurface;
@@ -188,10 +189,12 @@ public class TextureMovieEncoder implements Runnable {
     }
 
     /**
-     * Tells the video recorder to refresh its EGL surface immediately.  (Call from non-encoder thread.)
+     * Change filter.
      */
-    public void updateSharedContext2(EGLContext sharedContext) {
-        mHandler.sendMessageAtFrontOfQueue(mHandler.obtainMessage(MSG_UPDATE_SHARED_CONTEXT, sharedContext));
+    public void changeFilter() {
+        mHandler.removeMessages(MSG_FRAME_AVAILABLE);
+        mHandler.removeMessages(MSG_SET_TEXTURE_ID);
+        mHandler.sendMessageAtFrontOfQueue(mHandler.obtainMessage(MSG_FILTER_CHANGE));
     }
 
     /**
@@ -313,8 +316,32 @@ public class TextureMovieEncoder implements Runnable {
                 case MSG_QUIT:
                     Looper.myLooper().quit();
                     break;
+                case MSG_FILTER_CHANGE:
+                    encoder.handleFilterChange();
+                    break;
                 default:
                     throw new RuntimeException("Unhandled msg what=" + what);
+            }
+        }
+    }
+
+    /**
+     * Handle filter change.
+     */
+    private void handleFilterChange() {
+        Log.d(TAG, "handleFilterChange:" + type);
+
+        if (filter != null) {
+            filter.destroy();
+            filter = null;
+        }
+
+        if (type != MagicFilterType.NONE) {
+            filter = MagicFilterFactory.initFilters(type);
+            if (filter != null) {
+                filter.init();
+                filter.onInputSizeChanged(mPreviewWidth, mPreviewHeight);
+                filter.onDisplaySizeChanged(mVideoWidth, mVideoHeight);
             }
         }
     }
@@ -439,7 +466,7 @@ public class TextureMovieEncoder implements Runnable {
         }
         if (filter != null) {
             filter.destroy();
-            filter = null;
+             filter = null;
             type = MagicFilterType.NONE;
         }
     }
