@@ -1,1 +1,1 @@
-include ':app', ':uppush', ':magicfilter', ':magicfilterdemo'
+include ':app', ':uppush', ':magicfilter', ':magicfilterdemo', ':libspeex'

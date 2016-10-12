@@ -15,15 +15,18 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
+import android.widget.Switch;
 
+import com.upyun.hardware.AudioEncoder;
 import com.upyun.hardware.Config;
 import com.upyun.hardware.PushClient;
 
 import java.io.IOException;
 
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-public class MainActivity extends Activity implements View.OnClickListener {
+public class MainActivity extends Activity implements View.OnClickListener, CompoundButton.OnCheckedChangeListener {
     private static final String TAG = "MainActivity";
     private SurfaceRenderView surface;
     private PushClient mClient;
@@ -36,6 +39,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
     private static final int REQUEST_CODE_PERMISSION_CAMERA = 100;
     private static final int REQUEST_CODE_PERMISSION_RECORD_AUDIO = 101;
 
+    private Switch st_noise;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,6 +51,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
         mBtSetting = (Button) findViewById(R.id.bt_setting);
         mBtconvert = (Button) findViewById(R.id.bt_convert);
         mImgFlash = (ImageView) findViewById(R.id.img_flash);
+        st_noise = (Switch) findViewById(R.id.st_noise);
+        st_noise.setOnCheckedChangeListener(this);
         mBtToggle.setOnClickListener(this);
         mBtSetting.setOnClickListener(this);
         mBtconvert.setOnClickListener(this);
@@ -205,5 +212,13 @@ public class MainActivity extends Activity implements View.OnClickListener {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
+    @Override
+    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+        switch (buttonView.getId()) {
+            case R.id.st_noise:
+                AudioEncoder.NOISE = isChecked;
+                break;
+        }
+    }
 }
 
