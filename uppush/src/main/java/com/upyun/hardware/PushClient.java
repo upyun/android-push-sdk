@@ -132,7 +132,7 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
             parameters.setPreviewFpsRange(range[0], range[1]);
             parameters.setPreviewFormat(ImageFormat.NV21);
             if (parameters.getSupportedFocusModes() != null &&
-                parameters.getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
+                    parameters.getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
                 parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
             }
             mCamera.setParameters(parameters);
@@ -249,6 +249,9 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
                 AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_16BIT, minBufferSize);
         audioRecord.startRecording();
+
+        audioEncoder.initSpeex(minBufferSize);
+
         while (aloop && !Thread.interrupted()) {
 
             byte[] buffer = new byte[minBufferSize];

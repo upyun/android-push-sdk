@@ -7,6 +7,9 @@ import android.media.MediaCodecList;
 import android.media.MediaFormat;
 import android.os.Build;
 import android.text.TextUtils;
+import android.util.Log;
+
+import com.upyun.Speex;
 
 import net.ossrs.yasea.SrsFlvMuxer;
 
@@ -21,6 +24,11 @@ public class AudioEncoder {
 
     private int mAudioTrack;
     private SrsFlvMuxer mFlvMuxer;
+
+    public static boolean NOISE;
+
+    private Speex speex;
+
 
     public AudioEncoder(SrsFlvMuxer flvMuxer) {
         mFlvMuxer = flvMuxer;
@@ -77,6 +85,17 @@ public class AudioEncoder {
             return;
         }
 
+        if (NOISE && speex != null) {
+            for (int i = 0; i < data.length; i++) {
+                //音量大小,此种方法放大声音会有底噪声
+                data[i] = (byte) (data[i] * 5);//数字决定大小
+            }
+
+            //降噪
+            speex.process(data, 0, length);
+        }
+
+
         ByteBuffer[] inputBuffers = mediaCodec.getInputBuffers();
         ByteBuffer[] outputBuffers = mediaCodec.getOutputBuffers();
         int inputBufferIndex = mediaCodec.dequeueInputBuffer(-1);
@@ -105,5 +124,17 @@ public class AudioEncoder {
             mediaCodec.release();
             mediaCodec = null;
         }
+
+        if(speex !=null){
+            speex.close();
+            speex = null;
+        }
+    }
+
+    public void initSpeex(int minBufferSize) {
+        speex = new Speex();
+        speex.init(minBufferSize);
+        int frameSize = speex.getFrameSize();
+        Log.i(TAG, "minBufferSize:" + minBufferSize + "  framesize:" + frameSize);
     }
 }

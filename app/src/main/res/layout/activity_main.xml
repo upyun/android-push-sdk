@@ -28,6 +28,14 @@
             android:layout_height="wrap_content"
             android:layout_gravity="right"
             android:src="@drawable/selector_switchflash" />
+
+        <Switch
+            android:id="@+id/st_noise"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="left"
+            android:layout_marginTop="10dp" />
+
     </FrameLayout>
 
     <LinearLayout
