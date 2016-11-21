@@ -38,6 +38,8 @@
 
 * 滤镜版：运行 Modeule [magicfilterdemo](https://github.com/upyun/android-push-sdk/tree/master/magicfilterdemo)
 
+* 录屏版：可实现录屏直播，需Android5.0及以上系统支持，录屏SDK及demo下载链接：http://formtest.b0.upaiyun.com/%E5%BD%95%E5%B1%8F%E7%9B%B4%E6%92%ADSDK.zip
+
 ## SDK 使用示例
 
 ###添加 SDK 所需权限
@@ -130,56 +132,6 @@ Android 4.1(API 16) 以上
 对外服务的推流域名：`xxx.com` （如无可不填写）  
 
 对外服务的拉流域名：`xxx.com` （如无可不填写）  
-
-**4.推拉流地址格式以及 token 加密规则**  
-
-推流地址：`rtmp://bucket.v0.upaiyun.com/show/abc`  
-
-拉流地址：`rtmp` 协议  `rtmp://bucket.b0.upaiyun.com/show/abc` ,
-`http+flv`  `http://bucket.b0.upaiyun.com/show/abc.flv` , `hls`       `http://bucket.b0.upaiyun.com/show/abc.m3u8` 
-
-**Token 防盗链加密规则** 
-
-`Token` 防盗链可设置签名过期时间来控制文件的访问时限  
-
-**url格式**：  
-
-推流地址：`rtmp://bucket.v0.upaiyun.com/show/abc?_upt=abcdefgh137000060`  
-
-拉流地址：`http://bucket.b0.upaiyun.com/show/abc.flv?_upt=abcdefgh137000060`   
-
-**签名方式说明**  
-
-**签名**：`_upt = MD5( token密匙 + etime + URI) {中间 8 位} + etime` 
-
-加密后格式如下 `_upt=abcdefgh1370000600` 
-
-
-
-**参数**：  
-
-`token` 密钥：用户所填的密钥(一个 `bucket` 对应一个密钥)  
-
-`etime` ：过期时间，必须是 UNIX TIME 格式，如： `1378092990`  
-
-`URI` ：请求地址（不包含?及后面的 Query String），如： `/live/abc`    
-
-
-**正确例子**: 
-
-密钥 : `password`
-
-etime : `1462513671`
-
-URI : `/live/streamhz`
-
-密钥 + etime + URI 拼接结果 :  `password1462513671/live/streamhz`
-
-md5 之后： `cd07624363efbcc102e772c2e270e811`
-
-取中间 8 位加 `etime` ：`bcc102e71462513671` 
-
-最后 url ： `url`
 
 ## 版本历史
 
