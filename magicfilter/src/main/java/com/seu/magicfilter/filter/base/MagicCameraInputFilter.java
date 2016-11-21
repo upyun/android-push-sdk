@@ -69,13 +69,11 @@ public class MagicCameraInputFilter extends GPUImageFilter{
 
     @Override
     public int onDrawFrame(int textureId, FloatBuffer vertexBuffer, FloatBuffer textureBuffer) {
-
+        GLES20.glUseProgram(mGLProgId);
+        runPendingOnDrawTasks();
         if(!isInitialized()) {
             return OpenGlUtils.NOT_INIT;
         }
-        runPendingOnDrawTasks();
-        GLES20.glUseProgram(mGLProgId);
-
         vertexBuffer.position(0);
         GLES20.glVertexAttribPointer(mGLAttribPosition, 2, GLES20.GL_FLOAT, false, 0, vertexBuffer);
         GLES20.glEnableVertexAttribArray(mGLAttribPosition);
