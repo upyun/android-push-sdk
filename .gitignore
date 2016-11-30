@@ -45,7 +45,6 @@ captures/
 
 # IntelliJ project files
 .idea
-*.iml
 out
 gen
 
@@ -53,3 +52,6 @@ gen
 /uppush/bintrayv1.gradle
 /uppush/installv1.gradle
 /.gradletasknamecache
+/uppush/gradle/
+/uppush/gradlew
+/uppush/gradlew.bat
