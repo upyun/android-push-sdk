@@ -33,32 +33,40 @@ CaptureEngine mEngine = new CaptureEngine(mConfig);
 **step 2. 开启和关闭推流**
 
 // 开启推流
+
 MediaProjection mMediaProjection = mMediaProjectionManager.getMediaProjection(resultCode, data);
 mEngine.start(mMediaProjection);
 
 // 关闭推流
+
 mEngine.stop();
 
 
 **step 3. 开启和关闭摄像头预览**
 
 摄像头预览窗口是以悬浮窗的方式实现的，开启预览时，需要添加如下权限：
+```
 <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 <uses-permission android:name="android.permission.CAMERA" />
+```
 
 注意：如果摄像头预览无法开启，查看手机权限管理，该录屏直播App的悬浮窗权限是否开启。
 
 // 开启摄像头预览
+
 mEngine.setCameraEnable(true);
 
 // 关闭摄像头预览
+
 mEngine.setCameraEnable(false);
 
 
 **3. SDK需要的所有权限**
 
+```
 <uses-permission android:name="android.permission.INTERNET"/>
 <uses-permission android:name="android.permission.RECORD_AUDIO"/>
 <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 <uses-permission android:name="android.permission.CAMERA" />
+```
 
