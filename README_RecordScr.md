@@ -1,17 +1,17 @@
-//RTMP推流-录屏直播(Android)
+##RTMP推流-录屏直播(Android)
 
 功能概述：
 手机录屏直播，即可以直接把主播的手机画面作为直播源，同时可以叠加摄像头预览，应用于游戏直播、移动端APP演示等需要手机屏幕画面的场景。
 
-1. SDK使用须知
+**1. SDK使用须知**
 
 本SDK需运行于Android 5.0以上系统，主播只需要在直播前安装并启动直播App，然后按Home将App切到后台，之后主播屏幕上的内容都可以作为直播内容。
 其内部原理是使用Android系统提供的录屏API进行画面采集，并由RTMP SDK底层模块负责编码和RTMP推流。
 
 
-2. SDK对接方法
+**2. SDK对接方法**
 
-step 1. 创建CaptureEngine对象
+**step 1. 创建CaptureEngine对象**
 
 CaptureConfig mConfig = new CaptureConfig(context, mRtmpUrl, mBitrate, mPushMode);
 CaptureEngine mEngine = new CaptureEngine(mConfig);
@@ -30,7 +30,7 @@ CaptureEngine mEngine = new CaptureEngine(mConfig);
 （2）另一种极端情况就是手机屏幕每时每刻都在发生剧烈的变化，比如主播在玩《神庙逃跑》，这个时候即使 540 * 960 的普通分辨率也至少需要 2Mbps 的码率才能保证没有马赛克。
 
 
-step 2. 开启和关闭推流
+**step 2. 开启和关闭推流**
 
 // 开启推流
 MediaProjection mMediaProjection = mMediaProjectionManager.getMediaProjection(resultCode, data);
@@ -40,7 +40,8 @@ mEngine.start(mMediaProjection);
 mEngine.stop();
 
 
-step 3. 开启和关闭摄像头预览
+**step 3. 开启和关闭摄像头预览**
+
 摄像头预览窗口是以悬浮窗的方式实现的，开启预览时，需要添加如下权限：
 <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 <uses-permission android:name="android.permission.CAMERA" />
@@ -54,7 +55,7 @@ mEngine.setCameraEnable(true);
 mEngine.setCameraEnable(false);
 
 
-3. SDK需要的所有权限
+**3. SDK需要的所有权限**
 
 <uses-permission android:name="android.permission.INTERNET"/>
 <uses-permission android:name="android.permission.RECORD_AUDIO"/>
