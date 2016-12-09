@@ -166,6 +166,7 @@ public class TextureMovieEncoder implements Runnable {
      */
     public void stopRecording() {
         // TODO: 16/8/12  exit with NullPointerException
+        Log.e(TAG, "stop recording.....");
         mHandler.sendMessage(mHandler.obtainMessage(MSG_STOP_RECORDING));
         mHandler.sendMessage(mHandler.obtainMessage(MSG_QUIT));
         // We don't know when these will actually finish (or even start).  We don't want to

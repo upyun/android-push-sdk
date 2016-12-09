@@ -55,6 +55,8 @@ public class MagicCameraView extends MagicBaseView {
     private static TextureMovieEncoder videoEncoder = new TextureMovieEncoder();
 
     private String outputPath;
+    private Object mSurfaceAvailable = new Object();
+    private boolean surfaceAvailable = false;
 
     public MagicCameraView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -83,6 +85,11 @@ public class MagicCameraView extends MagicBaseView {
                 surfaceTexture.setOnFrameAvailableListener(onFrameAvailableListener);
             }
         }
+
+        synchronized (mSurfaceAvailable) {
+            surfaceAvailable = true;
+            mSurfaceAvailable.notify();
+        }
     }
 
     @Override
@@ -97,6 +104,7 @@ public class MagicCameraView extends MagicBaseView {
         if (surfaceTexture == null)
             return;
         surfaceTexture.updateTexImage();
+//        Log.e("onDrawFrame", "recordingEnabled " + recordingEnabled);
         if (recordingEnabled) {
             switch (recordingStatus) {
                 case RECORDING_OFF:
@@ -186,10 +194,23 @@ public class MagicCameraView extends MagicBaseView {
     public void surfaceDestroyed(SurfaceHolder holder) {
         super.surfaceDestroyed(holder);
         CameraEngine.releaseCamera();
+        synchronized (mSurfaceAvailable) {
+            surfaceAvailable = false;
+        }
     }
 
     public void changeRecordingState(boolean isRecording) {
-        recordingEnabled = isRecording;
+
+        synchronized (mSurfaceAvailable) {
+            while(!surfaceAvailable) {
+                try {
+                    mSurfaceAvailable.wait();
+                } catch (InterruptedException ie) {
+                    // ignore
+                }
+            }
+            recordingEnabled = isRecording;
+        }
     }
 
     protected void onFilterChanged() {

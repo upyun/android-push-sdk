@@ -19,11 +19,13 @@ package com.upyun.push;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.SurfaceTexture;
+import android.hardware.Camera;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -31,12 +33,16 @@ import android.view.View;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
+import com.upyun.hardware.PushClient;
+
 import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SurfaceRenderView extends SurfaceView implements IRenderView {
+    private static final String TAG = SurfaceRenderView.class.getSimpleName();
     private MeasureHelper mMeasureHelper;
+    private float oldDist = 1f;
 
     public SurfaceRenderView(Context context) {
         super(context);
@@ -268,6 +274,59 @@ public class SurfaceRenderView extends SurfaceView implements IRenderView {
         super.onInitializeAccessibilityNodeInfo(info);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
             info.setClassName(SurfaceRenderView.class.getName());
+        }
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if (event.getPointerCount() == 1) {
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+//                PushClient.focusOnTouch();
+            }
+        } else {
+            switch (event.getAction() & MotionEvent.ACTION_MASK) {
+                case MotionEvent.ACTION_POINTER_DOWN:
+                    oldDist = getFingerSpacing(event);
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    float newDist = getFingerSpacing(event);
+                    if (newDist > oldDist) {
+                        handleZoom(true, PushClient.getCamera());
+                    } else if (newDist < oldDist) {
+                        handleZoom(false, PushClient.getCamera());
+                    }
+                    oldDist = newDist;
+                    break;
+            }
+        }
+        return true;
+    }
+
+    private static float getFingerSpacing(MotionEvent event) {
+        float x = event.getX(0) - event.getX(1);
+        float y = event.getY(0) - event.getY(1);
+        return (float) Math.sqrt(x * x + y * y);
+    }
+
+    private void handleZoom(boolean isZoomIn, Camera camera) {
+        if (camera == null) {
+            Log.e(TAG, "camera is null");
+            return;
+        }
+
+        Camera.Parameters params = camera.getParameters();
+        if (params.isZoomSupported()) {
+            int maxZoom = params.getMaxZoom();
+            int zoom = params.getZoom();
+            if (isZoomIn && zoom < maxZoom) {
+                zoom++;
+            } else if (zoom > 0) {
+                zoom--;
+            }
+            params.setZoom(zoom);
+            camera.setParameters(params);
+        } else {
+            Log.e(TAG, "zoom not supported");
         }
     }
 }

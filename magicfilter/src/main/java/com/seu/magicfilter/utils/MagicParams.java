@@ -9,7 +9,7 @@ public class MagicParams {
     public static MagicBaseView magicBaseView;
 
     public static String videoPath = "rtmp://testlivesdk.v0.upaiyun.com/live/";
-    public static String videoName = "upyun12345";
+    public static String videoName = "upyuntest123";
 
     public static int beautyLevel = 5;
 

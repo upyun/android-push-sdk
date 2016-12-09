@@ -93,6 +93,10 @@ public class CameraActivity extends Activity {
                 .build((MagicCameraView) findViewById(R.id.glsurfaceview_camera));
         initView();
 
+        magicEngine.startRecord();
+        animator.start();
+        isRecording = true;
+
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             @Override
             public void uncaughtException(Thread thread, final Throwable ex) {

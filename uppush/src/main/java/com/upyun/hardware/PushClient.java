@@ -1,10 +1,15 @@
 package com.upyun.hardware;
 
+import android.app.Activity;
+import android.content.Context;
+import android.content.IntentFilter;
 import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.net.ConnectivityManager;
+import android.os.Handler;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -22,7 +27,7 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
     private SurfaceView mSurface;
 
     private Config config;
-    private Camera mCamera;
+    private static Camera mCamera = null;
     private byte[] mYuvFrameBuffer;
     private int width;
     private int height;
@@ -32,6 +37,8 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
     private boolean aloop = false;
     private Thread aworker = null;
     protected static boolean isPush = false;
+    private boolean autoDisconnected = false;
+    private boolean reconnectEnable = false;//是否开启自动重连，默认关闭
 
     protected final static int MODE_NORMAL = 1;
     protected final static int MODE_VIDEO_ONLY = 2;
@@ -42,6 +49,10 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
     //    protected static int MODE = MODE_VIDEO_ONLY;
     protected static int CAMERA_TYPE;
 
+    private NetStateReceiver mNetStateReceiver = null;
+    private Context mContext;
+    private Handler mHandler;
+
     private SrsFlvMuxer mSrsFlvMuxer = new SrsFlvMuxer(new RtmpPublisher.EventHandler() {
         @Override
         public void onRtmpConnecting(String msg) {
@@ -51,6 +62,9 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         @Override
         public void onRtmpConnected(String msg) {
             Log.e(TAG, msg);
+            if (mHandler != null) {
+                mHandler.sendMessage(mHandler.obtainMessage(UConstant.MSG_STREAM_START));
+            }
         }
 
         @Override
@@ -64,6 +78,9 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         @Override
         public void onRtmpStopped(String msg) {
             Log.e(TAG, msg);
+            if (mHandler != null) {
+                mHandler.sendMessage(mHandler.obtainMessage(UConstant.MSG_STREAM_STOP));
+            }
         }
 
         @Override
@@ -77,17 +94,91 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         }
     });
 
-    public PushClient(SurfaceView surface) {
-        this(surface, new Config.Builder().build());
+    public PushClient(Context context, SurfaceView surface, Handler handler) {
+        this(context, surface, handler, new Config.Builder().build());
     }
 
     public Config getConfig() {
         return config;
     }
 
-    public PushClient(SurfaceView surface, Config config) {
+    public PushClient(Context context, SurfaceView surface, Handler handler, Config config) {
+        this.mContext = context;
         this.mSurface = surface;
+        this.mHandler = handler;
         this.config = config;
+        mSurface.getHolder().addCallback(this);
+        setDefaultUncaughtExceptionHandler();
+    }
+
+    //开启/关闭自动重连
+    public void setReconnectEnable(boolean enable) {
+        this.reconnectEnable = enable;
+
+        if (reconnectEnable) {
+            initReconnect();
+        } else {
+            uninitReconnect();
+        }
+    }
+
+    private void initReconnect() {
+        if (mNetStateReceiver == null) {
+            mNetStateReceiver = new NetStateReceiver(new NetStateReceiver.NetStateHandler() {
+                @Override
+                public void onNetStateChanged(int state) {
+                    if (UConstant.NET_WORK_WIFI == state) {
+                        if (autoDisconnected) {
+                            startStream();
+                        }
+                    } else if (UConstant.NET_WORK_MOBILE == state) {
+                        if (autoDisconnected) {
+                            startStream();
+                        }
+                    } else if (UConstant.NET_WORK_NULL == state) {
+                        //without network do nothing
+                    }
+                }
+            });
+
+            //注册网络状态监听广播
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+            mContext.registerReceiver(mNetStateReceiver, filter);
+        }
+    }
+
+    private void uninitReconnect() {
+        //注销网络状态广播
+        if (mNetStateReceiver != null) {
+            mContext.unregisterReceiver(mNetStateReceiver);
+        }
+    }
+
+    //设置异常捕获
+    private void setDefaultUncaughtExceptionHandler() {
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread thread, Throwable ex) {
+                final String mNotifyMsg = ex.toString();
+                ((Activity)mContext).runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Log.e(TAG, mNotifyMsg);
+                        if (!isPush) { //不重连
+                            return;
+                        }
+
+                        stopStream();
+                        if (reconnectEnable) { //重连
+                            if (NetStateReceiver.getNetWorkStatus() != UConstant.NET_WORK_NULL) {
+                                startStream();
+                            }
+                        }
+                    }
+                });
+            }
+        });
     }
 
     public void setConfig(Config config) {
@@ -105,7 +196,7 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         }
 
         holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-        holder.addCallback(PushClient.this);
+//        holder.addCallback(PushClient.this);
 
         switch (config.resolution) {
             case HIGH:
@@ -211,8 +302,17 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         return closestRange;
     }
 
-    public void startPush() throws IOException {
+    private void startStream() {
+        try {
+            startPush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
+        autoDisconnected = false;
+    }
+
+    public void startPush() throws IOException {
         if (isPush) {
             return;
         }
@@ -261,6 +361,11 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
             }
         }
 
+    }
+
+    private void stopStream() {
+        stopPush();
+        autoDisconnected = true;
     }
 
     public void stopPush() {
@@ -314,28 +419,19 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         if (mCamera != null) {
-            try {
-                mCamera.setPreviewDisplay(holder);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            stopCamera();
         }
+        startCamera(holder);
     }
 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
 
-        if (mCamera != null) {
-            try {
-                mCamera.setPreviewDisplay(holder);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
+
     }
 
     public boolean covertCamera() {
@@ -353,7 +449,7 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         return converted;
     }
 
-    public void focusOnTouch() {
+    public static void focusOnTouch() {
         if (mCamera != null) {
             Camera.Parameters parameters = mCamera.getParameters();
             if (!parameters.getFocusMode().equals(Camera.Parameters.FOCUS_MODE_AUTO) &&
@@ -408,6 +504,10 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
                 Log.e(TAG, "The device does not support control of a flashlight!");
             }
         }
+    }
+
+    public static Camera getCamera() {
+        return mCamera;
     }
 }
 

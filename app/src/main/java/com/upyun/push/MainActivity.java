@@ -8,10 +8,11 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -22,6 +23,7 @@ import android.widget.Switch;
 import com.upyun.hardware.AudioEncoder;
 import com.upyun.hardware.Config;
 import com.upyun.hardware.PushClient;
+import com.upyun.hardware.UConstant;
 
 import java.io.IOException;
 
@@ -35,7 +37,6 @@ public class MainActivity extends Activity implements View.OnClickListener, Comp
     private Button mBtconvert;
     private ImageView mImgFlash;
     private Config config;
-    private String mNotifyMsg;
     private static final int REQUEST_CODE_PERMISSION_CAMERA = 100;
     private static final int REQUEST_CODE_PERMISSION_RECORD_AUDIO = 101;
 
@@ -59,40 +60,25 @@ public class MainActivity extends Activity implements View.OnClickListener, Comp
         mImgFlash.setOnClickListener(this);
         mImgFlash.setEnabled(true);
 
-        mClient = new PushClient(surface);
-
-
-        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-            @Override
-            public void uncaughtException(Thread thread, Throwable ex) {
-                mNotifyMsg = ex.toString();
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Log.e(TAG, mNotifyMsg);
-                        mClient.stopPush();
-                        mBtToggle.setText("start");
-                    }
-                });
-            }
-        });
+        mClient = new PushClient(this, surface, mHandler);
+        mClient.setReconnectEnable(true);//开启自动重连
 
         // check permission for 6.0+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             checkPermission();
         }
 
-        surface.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                if (event.getAction() == MotionEvent.ACTION_UP) {
-                    if (mClient != null) {
-                        //mClient.focusOnTouch();
-                    }
-                }
-                return true;
-            }
-        });
+//        surface.setOnTouchListener(new View.OnTouchListener() {
+//            @Override
+//            public boolean onTouch(View v, MotionEvent event) {
+//                if (event.getAction() == MotionEvent.ACTION_UP) {
+//                    if (mClient != null) {
+//                        //mClient.focusOnTouch();
+//                    }
+//                }
+//                return true;
+//            }
+//        });
     }
 
     @Override
@@ -113,17 +99,15 @@ public class MainActivity extends Activity implements View.OnClickListener, Comp
                 if (mClient.isStart()) {
                     mClient.stopPush();
                     Log.e(TAG, "stop");
-                    mBtToggle.setText("start");
+//                    mBtToggle.setText("start");
                 } else {
                     try {
                         mClient.startPush();
+                        Log.e(TAG, "start");
+//                        mBtToggle.setText("stop");
                     } catch (IOException e) {
                         e.printStackTrace();
-                        Log.e(TAG, e.toString());
-                        return;
                     }
-                    Log.e(TAG, "start");
-                    mBtToggle.setText("stop");
                 }
                 break;
             case R.id.bt_setting:
@@ -144,6 +128,17 @@ public class MainActivity extends Activity implements View.OnClickListener, Comp
                 break;
         }
     }
+
+    private Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            if (msg.what == UConstant.MSG_STREAM_START) {
+                mBtToggle.setText("stop");
+            } else if (msg.what == UConstant.MSG_STREAM_STOP) {
+                mBtToggle.setText("start");
+            }
+        }
+    };
 
     private void changeSurfaceSize(SurfaceRenderView surface, Config config) {
         int width = 1280;
@@ -177,6 +172,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Comp
         super.onDestroy();
         if (mClient != null) {
             mClient.stopPush();
+            mClient.setReconnectEnable(false);//关闭自动重连
         }
     }
 

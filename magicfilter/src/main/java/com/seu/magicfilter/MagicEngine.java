@@ -28,8 +28,15 @@ public class MagicEngine {
     }
 
     public void startRecord() {
-        if (MagicParams.magicBaseView instanceof MagicCameraView)
-            ((MagicCameraView) MagicParams.magicBaseView).changeRecordingState(true);
+        new Thread(){
+            @Override
+            public void run() {
+                if (MagicParams.magicBaseView instanceof MagicCameraView)
+                    ((MagicCameraView) MagicParams.magicBaseView).changeRecordingState(true);
+            }
+        }.start();
+//        if (MagicParams.magicBaseView instanceof MagicCameraView)
+//            ((MagicCameraView) MagicParams.magicBaseView).changeRecordingState(true);
     }
 
     public void stopRecord() {

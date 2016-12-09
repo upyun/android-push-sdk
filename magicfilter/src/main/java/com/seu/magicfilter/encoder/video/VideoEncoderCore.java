@@ -189,6 +189,7 @@ public class VideoEncoderCore {
     }
 
     private void stopAudio() {
+        Log.e(TAG, "stop audio thread");
         aloop = false;
         if (aworker != null) {
             Log.i(TAG, "stop audio worker thread");
