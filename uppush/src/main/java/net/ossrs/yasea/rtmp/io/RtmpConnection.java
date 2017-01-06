@@ -1,20 +1,5 @@
 package net.ossrs.yasea.rtmp.io;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketAddress;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import android.util.Log;
 
 import net.ossrs.yasea.rtmp.RtmpPublisher;
@@ -25,14 +10,29 @@ import net.ossrs.yasea.rtmp.amf.AmfObject;
 import net.ossrs.yasea.rtmp.amf.AmfString;
 import net.ossrs.yasea.rtmp.packets.Abort;
 import net.ossrs.yasea.rtmp.packets.Acknowledgement;
+import net.ossrs.yasea.rtmp.packets.Audio;
+import net.ossrs.yasea.rtmp.packets.Command;
 import net.ossrs.yasea.rtmp.packets.Data;
 import net.ossrs.yasea.rtmp.packets.Handshake;
-import net.ossrs.yasea.rtmp.packets.Command;
-import net.ossrs.yasea.rtmp.packets.Audio;
-import net.ossrs.yasea.rtmp.packets.Video;
-import net.ossrs.yasea.rtmp.packets.UserControl;
 import net.ossrs.yasea.rtmp.packets.RtmpPacket;
+import net.ossrs.yasea.rtmp.packets.UserControl;
+import net.ossrs.yasea.rtmp.packets.Video;
 import net.ossrs.yasea.rtmp.packets.WindowAckSize;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Main RTMP connection implementation class
@@ -117,7 +117,7 @@ public class RtmpConnection implements RtmpPublisher, PacketRxHandler {
         active = true;
         Log.d(TAG, "connect(): handshake done");
         rtmpSessionInfo = new RtmpSessionInfo();
-        readThread = new ReadThread(rtmpSessionInfo, in, this);
+        readThread = new ReadThread(rtmpSessionInfo, in, this, this);
         writeThread = new WriteThread(rtmpSessionInfo, out, this);
         readThread.start();
         writeThread.start();

@@ -19,13 +19,16 @@ import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.Switch;
+import android.widget.TextView;
 
+import com.upyun.hardware.AsyncRun;
 import com.upyun.hardware.AudioEncoder;
 import com.upyun.hardware.Config;
 import com.upyun.hardware.PushClient;
 import com.upyun.hardware.UConstant;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 public class MainActivity extends Activity implements View.OnClickListener, CompoundButton.OnCheckedChangeListener {
@@ -36,11 +39,30 @@ public class MainActivity extends Activity implements View.OnClickListener, Comp
     private Button mBtSetting;
     private Button mBtconvert;
     private ImageView mImgFlash;
+    private TextView mStreamInfo;
     private Config config;
     private static final int REQUEST_CODE_PERMISSION_CAMERA = 100;
     private static final int REQUEST_CODE_PERMISSION_RECORD_AUDIO = 101;
 
     private Switch st_noise;
+
+    private PushClient.RtmpPublishListener mRtmpPublishListener = new PushClient.RtmpPublishListener() {
+        @Override
+        public void onRtmpPublishInfo(final int bitrate, final double fps, final long totalSize) {
+            AsyncRun.run(new Runnable() {
+                @Override
+                public void run() {
+                    DecimalFormat df = new DecimalFormat("######0.0");
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("bitrate:  " + bitrate + "kbps\r\n");
+                    sb.append("fps:  " + df.format(fps) + "fps\r\n");
+                    sb.append("totalsize:  " + totalSize + "KB\r\n");
+//            Log.e(TAG, "bitrate:" + bitrate + "kbps, fps:" + df.format(fps) + "fps, totalSize:" + totalSize + "KB");
+                    mStreamInfo.setText(sb);
+                }
+            });
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,26 +81,17 @@ public class MainActivity extends Activity implements View.OnClickListener, Comp
         mBtconvert.setOnClickListener(this);
         mImgFlash.setOnClickListener(this);
         mImgFlash.setEnabled(true);
+        mStreamInfo = (TextView) findViewById(R.id.tv_streaminfo);
 
         mClient = new PushClient(this, surface, mHandler);
         mClient.setReconnectEnable(true);//开启自动重连
+        mClient.setAdjustBitEnable(true);
+        mClient.setOnRtmpPublishListener(mRtmpPublishListener);
 
         // check permission for 6.0+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             checkPermission();
         }
-
-//        surface.setOnTouchListener(new View.OnTouchListener() {
-//            @Override
-//            public boolean onTouch(View v, MotionEvent event) {
-//                if (event.getAction() == MotionEvent.ACTION_UP) {
-//                    if (mClient != null) {
-//                        //mClient.focusOnTouch();
-//                    }
-//                }
-//                return true;
-//            }
-//        });
     }
 
     @Override

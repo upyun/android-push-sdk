@@ -1,6 +1,5 @@
 package com.upyun.hardware;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.IntentFilter;
 import android.graphics.ImageFormat;
@@ -39,6 +38,7 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
     protected static boolean isPush = false;
     private boolean autoDisconnected = false;
     private boolean reconnectEnable = false;//是否开启自动重连，默认关闭
+    protected int recTime = 0;
 
     protected final static int MODE_NORMAL = 1;
     protected final static int MODE_VIDEO_ONLY = 2;
@@ -52,6 +52,9 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
     private NetStateReceiver mNetStateReceiver = null;
     private Context mContext;
     private Handler mHandler;
+    private double mFps;
+
+    private boolean adjustBitEnable = false;//是否开启动态码率，默认关闭
 
     private SrsFlvMuxer mSrsFlvMuxer = new SrsFlvMuxer(new RtmpPublisher.EventHandler() {
         @Override
@@ -65,6 +68,7 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
             if (mHandler != null) {
                 mHandler.sendMessage(mHandler.obtainMessage(UConstant.MSG_STREAM_START));
             }
+            recTime = 0;
         }
 
         @Override
@@ -91,8 +95,45 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         @Override
         public void onRtmpOutputFps(final double fps) {
             Log.i(TAG, String.format("Output Fps: %f", fps));
+            mFps = fps;
+        }
+
+        @Override
+        public void onRtmpDataInfo(int bitrate, long totalSize) {//totalSize(KB)
+//            Log.e(TAG, "onRtmpDataInfo - bitrate:" + bitrate + " kbps, totalSize:" + totalSize + "KB");
+            if (mRtmpPublishListener != null) {
+                mRtmpPublishListener.onRtmpPublishInfo(bitrate, mFps, totalSize);
+            }
+        }
+
+        @Override
+        public void onNetWorkError(Exception e, int tag) {
+            Log.e(TAG, "onNetWorkError" + e.toString());
+
+            AsyncRun.run(new Runnable() {
+                @Override
+                public void run() {
+//                Log.e(TAG, "recTime:" + recTime);
+                    if (reconnectEnable && recTime <= 3) {
+                        reconnect();
+                    } else {
+                        autoStop();
+                    }
+                }
+            }, 3000);
         }
     });
+
+
+    public interface RtmpPublishListener {
+        void onRtmpPublishInfo(int bitrate, double fps, long totalSize);
+    }
+
+    private RtmpPublishListener mRtmpPublishListener = null;
+
+    public void setOnRtmpPublishListener(RtmpPublishListener listener) {
+        this.mRtmpPublishListener = listener;
+    }
 
     public PushClient(Context context, SurfaceView surface, Handler handler) {
         this(context, surface, handler, new Config.Builder().build());
@@ -108,7 +149,6 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         this.mHandler = handler;
         this.config = config;
         mSurface.getHolder().addCallback(this);
-        setDefaultUncaughtExceptionHandler();
     }
 
     //开启/关闭自动重连
@@ -129,11 +169,11 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
                 public void onNetStateChanged(int state) {
                     if (UConstant.NET_WORK_WIFI == state) {
                         if (autoDisconnected) {
-                            startStream();
+                            autoStart();
                         }
                     } else if (UConstant.NET_WORK_MOBILE == state) {
                         if (autoDisconnected) {
-                            startStream();
+                            autoStart();
                         }
                     } else if (UConstant.NET_WORK_NULL == state) {
                         //without network do nothing
@@ -155,30 +195,19 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         }
     }
 
-    //设置异常捕获
-    private void setDefaultUncaughtExceptionHandler() {
-        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-            @Override
-            public void uncaughtException(Thread thread, Throwable ex) {
-                final String mNotifyMsg = ex.toString();
-                ((Activity)mContext).runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Log.e(TAG, mNotifyMsg);
-                        if (!isPush) { //不重连
-                            return;
-                        }
+    public void reconnect() {
 
-                        stopStream();
-                        if (reconnectEnable) { //重连
-                            if (NetStateReceiver.getNetWorkStatus() != UConstant.NET_WORK_NULL) {
-                                startStream();
-                            }
-                        }
-                    }
-                });
+        recTime = recTime + 1;
+
+        autoStop();
+
+        Log.e(TAG, "reconnect time: " + recTime);
+
+        if (reconnectEnable && autoDisconnected) { //重连
+            if (NetStateReceiver.getNetWorkStatus() != UConstant.NET_WORK_NULL) {
+                autoStart();
             }
-        });
+        }
     }
 
     public void setConfig(Config config) {
@@ -302,14 +331,23 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         return closestRange;
     }
 
-    private void startStream() {
+    private void autoStart() {
         try {
             startPush();
         } catch (IOException e) {
             e.printStackTrace();
         }
-
         autoDisconnected = false;
+    }
+
+    private void autoStop() {
+
+        if (!isPush) {
+            return;
+        }
+
+        stopPush();
+        autoDisconnected = true;
     }
 
     public void startPush() throws IOException {
@@ -361,11 +399,6 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
             }
         }
 
-    }
-
-    private void stopStream() {
-        stopPush();
-        autoDisconnected = true;
     }
 
     public void stopPush() {
@@ -508,6 +541,21 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
 
     public static Camera getCamera() {
         return mCamera;
+    }
+
+    public void setAdjustBitEnable(boolean enable) {
+        this.adjustBitEnable = enable;
+    }
+
+    public void adjustBitrate(int bitrate) {
+
+        if (adjustBitEnable) {
+            if (videoEncoder != null) {
+                videoEncoder.adjustBitrate(bitrate);
+            }
+        } else {
+            Log.w(TAG, "Adjust the bit rate switch is off.");
+        }
     }
 }
 

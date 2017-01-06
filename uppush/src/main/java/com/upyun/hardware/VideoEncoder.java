@@ -8,6 +8,7 @@ import android.media.MediaCodecList;
 import android.media.MediaFormat;
 import android.os.Build;
 import android.text.TextUtils;
+import android.util.Log;
 
 import net.ossrs.yasea.SrsFlvMuxer;
 
@@ -21,6 +22,8 @@ public class VideoEncoder {
     private MediaCodec mediaCodec;
     private int mWidth;
     private int mHeight;
+    private int mFps;
+    private int mBitrate;
     private byte[] h264;
     private String codecName;
     private byte[] sps_pps;
@@ -74,6 +77,8 @@ public class VideoEncoder {
     public void setVideoOptions(int width, int height, int bit, int fps) {
         mWidth = width;
         mHeight = height;
+        mFps = fps;
+        mBitrate = bit;
 
 //        mPushWidth = mHeight;
 //        mPushHeight = mWidth;
@@ -116,6 +121,36 @@ public class VideoEncoder {
                 }
             } catch (Exception e) {
                 e.printStackTrace();
+            }
+        }
+    }
+
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    public void adjustBitrate(int bitrate) {
+        if (mBitrate == bitrate) {
+            Log.w(TAG, "The bitrate is not changed.");
+            return;
+        }
+
+        synchronized (VideoEncoder.class) {
+            if (mediaCodec != null) {
+                MediaFormat mediaFormat = MediaFormat.createVideoFormat(
+                        MINE_TYPE, mPushWidth, mPushHeight);
+
+                mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, bitrate);
+                mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, mFps);
+                mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 2); // 关键帧间隔时间
+                // 单位s
+                mediaFormat
+                        .setInteger(
+                                MediaFormat.KEY_COLOR_FORMAT,
+                                mColorFormats);
+
+                mediaCodec.stop();
+                mediaCodec.configure(mediaFormat, null, null,
+                        MediaCodec.CONFIGURE_FLAG_ENCODE);
+                mediaCodec.start();
+                mBitrate = bitrate;
             }
         }
     }

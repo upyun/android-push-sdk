@@ -1,17 +1,16 @@
 package net.ossrs.yasea.rtmp.io;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.SocketException;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import android.util.Log;
 
 import net.ossrs.yasea.rtmp.RtmpPublisher;
 import net.ossrs.yasea.rtmp.packets.Command;
 import net.ossrs.yasea.rtmp.packets.RtmpPacket;
 import net.ossrs.yasea.rtmp.packets.Video;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.SocketException;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * RTMPConnection's write thread
@@ -61,12 +60,14 @@ public class WriteThread extends Thread {
                 out.flush();
             } catch (SocketException se) {
                 Log.e(TAG, "WriteThread: Caught SocketException during write loop, shutting down: " + se.getMessage());
-                Thread.getDefaultUncaughtExceptionHandler().uncaughtException(this, se);
+//                Thread.getDefaultUncaughtExceptionHandler().uncaughtException(this, se);
+                publisher.getEventHandler().onNetWorkError(se, 1);
                 active = false;
                 continue;
             } catch (IOException ioe) {
                 Log.e(TAG, "WriteThread: Caught IOException during write loop, shutting down: " + ioe.getMessage());
-                Thread.getDefaultUncaughtExceptionHandler().uncaughtException(this, ioe);
+//                Thread.getDefaultUncaughtExceptionHandler().uncaughtException(this, ioe);
+                publisher.getEventHandler().onNetWorkError(ioe, 1);
                 active = false;
                 continue;
             }

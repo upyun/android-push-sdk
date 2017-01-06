@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -64,6 +66,13 @@ public class SrsFlvMuxer {
     private static final int AUDIO_TRACK = 101;
     private static final String TAG = "SrsFlvMuxer";
 
+    // Statistics bitrate
+    private Timer timer = null;
+    private int bitrate = 0;
+    private int totalSize = 0;
+
+    private RtmpPublisher.EventHandler handler = null;
+
     /**
      * constructor.
      *
@@ -71,6 +80,7 @@ public class SrsFlvMuxer {
      */
     public SrsFlvMuxer(RtmpPublisher.EventHandler handler) {
         publisher = new SrsRtmpPublisher(handler);
+        this.handler = handler;
     }
 
     /**
@@ -118,6 +128,11 @@ public class SrsFlvMuxer {
         connected = false;
         sequenceHeaderOk = false;
         Log.i(TAG, "worker: disconnect SRS ok.");
+
+        if (timer != null) {
+            timer.cancel();
+            timer = null;
+        }
     }
 
     private void connect(String url) throws IllegalStateException, IOException {
@@ -128,6 +143,21 @@ public class SrsFlvMuxer {
             Log.i(TAG, String.format("worker: connect to RTMP server by url=%s\n", url));
             connected = true;
             sequenceHeaderOk = false;
+
+            if (timer != null) {
+                timer.cancel();
+                timer = null;
+            }
+            timer = new Timer();
+            timer.scheduleAtFixedRate(new TimerTask() {
+
+                @Override
+                public void run() {
+                    bitrate = bitrate * 8 / 1000;//kbps
+                    publisher.getEventHandler().onRtmpDataInfo(bitrate, totalSize);
+                    bitrate = 0;
+                }
+            }, 1000, 1000);
         }
     }
 
@@ -146,6 +176,9 @@ public class SrsFlvMuxer {
             Log.i(TAG, String.format("worker: send frame type=%d, dts=%d, size=%dB",
                     frame.type, frame.dts, frame.tag.size));
         }
+
+        bitrate += frame.tag.size;
+        totalSize += frame.tag.size / 1000;//KB
     }
 
     /**
@@ -196,7 +229,11 @@ public class SrsFlvMuxer {
                             }
                         } catch (IOException ioe) {
                             ioe.printStackTrace();
-                            Thread.getDefaultUncaughtExceptionHandler().uncaughtException(worker, ioe);
+//                            Thread.getDefaultUncaughtExceptionHandler().uncaughtException(worker, ioe);
+                            handler.onNetWorkError(ioe, 0);
+                        } catch (IllegalStateException e) {
+                            handler.onNetWorkError(e, 0);
+//                            worker.interrupt();
                         }
                     }
                     // Waiting for next frame
@@ -463,6 +500,30 @@ public class SrsFlvMuxer {
 
             int pos = bb.position();
             while (pos < bi.size - 3) {
+                // not match.
+                if (bb.get(pos) != 0x00 || bb.get(pos + 1) != 0x00) {
+                    break;
+                }
+
+                // match N[00] 00 00 01, where N>=0
+                if (bb.get(pos + 2) == 0x01) {
+                    as.match = true;
+                    as.nb_start_code = pos + 3 - bb.position();
+                    break;
+                }
+
+                pos++;
+            }
+
+            return as;
+        }
+
+        public SrsAnnexbSearch srs_avc_startswith_annexbII(ByteBuffer bb, int size) {
+            SrsAnnexbSearch as = new SrsAnnexbSearch();
+            as.match = false;
+
+            int pos = bb.position();
+            while (pos < size - 3) {
                 // not match.
                 if (bb.get(pos) != 0x00 || bb.get(pos + 1) != 0x00) {
                     break;
