@@ -9,6 +9,7 @@ import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.net.ConnectivityManager;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -18,6 +19,8 @@ import net.ossrs.yasea.rtmp.RtmpPublisher;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 
 public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callback {
@@ -110,17 +113,26 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         public void onNetWorkError(Exception e, int tag) {
             Log.e(TAG, "onNetWorkError" + e.toString());
 
-            AsyncRun.run(new Runnable() {
-                @Override
-                public void run() {
-//                Log.e(TAG, "recTime:" + recTime);
-                    if (reconnectEnable && recTime <= 3) {
-                        reconnect();
-                    } else {
+            if (isPush) {
+                AsyncRun.run(new Runnable() {
+                    @Override
+                    public void run() {
                         autoStop();
                     }
-                }
-            }, 3000);
+                });
+
+                AsyncRun.run(new Runnable() {
+                    @Override
+                    public void run() {
+
+                        if (reconnectEnable && recTime <= 3) {
+                            reconnect();
+                        } else {
+                            mHandler.sendMessage(mHandler.obtainMessage(UConstant.MSG_NETWORK_ERROR));
+                        }
+                    }
+                }, 3000);
+            }
         }
     });
 
@@ -199,8 +211,6 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
 
         recTime = recTime + 1;
 
-        autoStop();
-
         Log.e(TAG, "reconnect time: " + recTime);
 
         if (reconnectEnable && autoDisconnected) { //重连
@@ -225,7 +235,6 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         }
 
         holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-//        holder.addCallback(PushClient.this);
 
         switch (config.resolution) {
             case HIGH:
@@ -306,13 +315,16 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
 
 
     @Override
-    public void onPreviewFrame(byte[] data, Camera camera) {
+    public void onPreviewFrame(final byte[] data, Camera camera) {
 
-//        Log.e(TAG, "data:" + data.length);
-        if (videoEncoder != null && isPush) {
-            videoEncoder.fireVideo(data);
-            camera.addCallbackBuffer(mYuvFrameBuffer);
+        final long stamp = System.nanoTime() / 1000;
+
+        synchronized (PushClient.class) {
+            if (videoEncoder != null && isPush) {
+                videoEncoder.fireVideo(data, stamp);
+            }
         }
+        camera.addCallbackBuffer(mYuvFrameBuffer);
     }
 
     private int[] findClosestFpsRange(int expectedFps, List<int[]> fpsRanges) {
@@ -350,31 +362,34 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         autoDisconnected = true;
     }
 
-    public void startPush() throws IOException {
-        if (isPush) {
-            return;
-        }
-        isPush = true;
-        if (mCamera == null) {
-            startCamera(mSurface.getHolder());
-        }
-        videoEncoder = new VideoEncoder(mSrsFlvMuxer, config);
-        audioEncoder = new AudioEncoder(mSrsFlvMuxer);
-        videoEncoder.setVideoOptions(width,
-                height, config.bitRate, config.fps);
-//        videoEncoder.init(config.url);
-        mSrsFlvMuxer.start(config.url);
+    public synchronized void startPush() throws IOException {
 
-        aworker = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);
-                startAudio();
+        synchronized (PushClient.class) {
+
+            if (isPush) {
+                return;
             }
-        });
-        aloop = true;
+            isPush = true;
+            if (mCamera == null) {
+                startCamera(mSurface.getHolder());
+            }
+            videoEncoder = new VideoEncoder(mSrsFlvMuxer, config);
+            audioEncoder = new AudioEncoder(mSrsFlvMuxer);
+            videoEncoder.setVideoOptions(width,
+                    height, config.bitRate, config.fps);
+            mSrsFlvMuxer.start(config.url);
 
-        aworker.start();
+            aworker = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);
+                    startAudio();
+                }
+            });
+            aloop = true;
+
+            aworker.start();
+        }
     }
 
     private void startAudio() {
@@ -402,20 +417,23 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
     }
 
     public void stopPush() {
-        isPush = false;
-        if (mSrsFlvMuxer != null) {
-            mSrsFlvMuxer.stop();
+
+        synchronized (PushClient.class) {
+            isPush = false;
+            if (mSrsFlvMuxer != null) {
+                mSrsFlvMuxer.stop();
+            }
+            stopAudio();
+            if (audioEncoder != null) {
+                audioEncoder.stop();
+                audioEncoder = null;
+            }
+            if (videoEncoder != null) {
+                videoEncoder.stop();
+                videoEncoder = null;
+            }
         }
-        stopCamera();
-        stopAudio();
-        if (audioEncoder != null) {
-            audioEncoder.stop();
-            audioEncoder = null;
-        }
-        if (videoEncoder != null) {
-            videoEncoder.stop();
-            videoEncoder = null;
-        }
+
     }
 
     public static Camera getDefaultCamera(int position) {
@@ -464,7 +482,9 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-
+        if (mCamera != null) {
+            stopCamera();
+        }
     }
 
     public boolean covertCamera() {

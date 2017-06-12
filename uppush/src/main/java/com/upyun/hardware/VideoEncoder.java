@@ -92,6 +92,15 @@ public class VideoEncoder {
             mPushHeight = mWidth / 32 * 32;
         }
 
+//        if (config.orientation == Config.Orientation.HORIZONTAL) {
+//            mPushWidth = mWidth / 32 * 32;
+//            mPushHeight = mWidth * 9 / 16 / 32 * 32;
+//        } else {
+//            mPushWidth = mWidth * 9 / 16 / 32 * 32;
+//            mPushHeight = mWidth / 32 * 32;
+//        }
+
+
         mRotatedFrameBuffer = new byte[mPushHeight * mPushWidth * 3 / 2];
         mFlippedFrameBuffer = new byte[mPushHeight * mPushWidth * 3 / 2];
         mCroppedFrameBuffer = new byte[mPushHeight * mPushWidth * 3 / 2];
@@ -156,7 +165,7 @@ public class VideoEncoder {
     }
 
 
-    public void fireVideo(byte[] data) {
+    public void fireVideo(byte[] data,long stamp) {
         synchronized (VideoEncoder.class) {
 
             if (PushClient.MODE == PushClient.MODE_AUDIO_ONLY) {
@@ -190,7 +199,7 @@ public class VideoEncoder {
                 inputBuffer.put(mRotatedFrameBuffer);
                 //将此数据加入编码队列 参数3：需要一个增长的时间戳，不然无法持续编码
                 mediaCodec.queueInputBuffer(inputBufferIndex, 0, mRotatedFrameBuffer.length,
-                        System.nanoTime() / 1000, 0);
+                        stamp, 0);
             }
             //获得编码后的数据
             MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();

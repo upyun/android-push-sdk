@@ -1,23 +1,21 @@
 package net.ossrs.yasea.rtmp.amf;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
-import java.lang.String;
-
 import android.util.Log;
 
 import net.ossrs.yasea.rtmp.Util;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+
 /**
- *
  * @author francois
  */
 public class AmfString implements AmfData {
 
     private static final String TAG = "AmfString";
-	
+
     private String value;
     private boolean key;
     private int size = -1;
@@ -57,6 +55,11 @@ public class AmfString implements AmfData {
     @Override
     public void writeTo(OutputStream out) throws IOException {
         // Strings are ASCII encoded
+
+        if (this.value == null) {
+            return;
+        }
+
         byte[] byteValue = this.value.getBytes("ASCII");
         // Write the STRING data type definition (except if this String is used as a key)
         if (!key) {
