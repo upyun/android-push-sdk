@@ -272,7 +272,7 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            mCamera.setDisplayOrientation(90);
+//            mCamera.setDisplayOrientation(90);
             mCamera.startPreview();
         }
 
@@ -318,7 +318,6 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
     public void onPreviewFrame(final byte[] data, Camera camera) {
 
         final long stamp = System.nanoTime() / 1000;
-
         synchronized (PushClient.class) {
             if (videoEncoder != null && isPush) {
                 videoEncoder.fireVideo(data, stamp);
@@ -403,14 +402,15 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
                 AudioFormat.ENCODING_PCM_16BIT, minBufferSize);
         audioRecord.startRecording();
 
-        audioEncoder.initSpeex(minBufferSize);
+        audioEncoder.initSpeex(minBufferSize, 44100);
 
         while (aloop && !Thread.interrupted()) {
 
             byte[] buffer = new byte[minBufferSize];
             int len = audioRecord.read(buffer, 0, minBufferSize);
             if (0 < len) {
-                audioEncoder.fireAudio(buffer, len);
+                long stamp = System.nanoTime() / 1000;
+                audioEncoder.fireAudio(buffer, len, stamp);
             }
         }
 
@@ -488,6 +488,7 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
     }
 
     public boolean covertCamera() {
+        Log.e(TAG, "covertCamera start:" + System.nanoTime() / 1000);
         boolean converted = false;
         if (isPush) {
             if (config.cameraType == Camera.CameraInfo.CAMERA_FACING_FRONT) {
@@ -499,6 +500,7 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
             startCamera(mSurface.getHolder());
             converted = true;
         }
+        Log.e(TAG, "covertCamera end:" + System.nanoTime() / 1000);
         return converted;
     }
 

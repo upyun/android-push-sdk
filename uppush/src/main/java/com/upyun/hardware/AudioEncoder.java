@@ -1,6 +1,8 @@
 package com.upyun.hardware;
 
 import android.annotation.TargetApi;
+import android.media.AudioFormat;
+import android.media.AudioRecord;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecList;
@@ -56,7 +58,9 @@ public class AudioEncoder {
             MediaFormat mediaFormat = MediaFormat.createAudioFormat(MINE_TYPE,
                     44100, 1);
             mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, 64000);
-            mediaFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 0);
+            mediaFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, AudioRecord.getMinBufferSize(44100,
+                    AudioFormat.CHANNEL_IN_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT));
 
 //                mediaFormat.setInteger(MediaFormat.KEY_AAC_PROFILE,
 //                        MediaCodecInfo.CodecProfileLevel.AACObjectLC);
@@ -72,7 +76,7 @@ public class AudioEncoder {
     }
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-    public void fireAudio(byte[] data, int length) {
+    public void fireAudio(byte[] data, int length, long stamp) {
 
         if (PushClient.MODE == PushClient.MODE_VIDEO_ONLY) {
             return;
@@ -104,7 +108,8 @@ public class AudioEncoder {
             inputBuffer.clear();
             inputBuffer.put(data);
             mediaCodec.queueInputBuffer(inputBufferIndex, 0, data.length,
-                    System.nanoTime() / 1000, 0);
+                    stamp, 0);
+
         }
         MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
         int outputBufferIndex = mediaCodec.dequeueOutputBuffer(bufferInfo, 0);
@@ -125,16 +130,14 @@ public class AudioEncoder {
             mediaCodec = null;
         }
 
-        if(speex !=null){
+        if (speex != null) {
             speex.close();
             speex = null;
         }
     }
 
-    public void initSpeex(int minBufferSize) {
+    public void initSpeex(int minBufferSize, int sample) {
         speex = new Speex();
-        speex.init(minBufferSize);
-        int frameSize = speex.getFrameSize();
-        Log.i(TAG, "minBufferSize:" + minBufferSize + "  framesize:" + frameSize);
+        speex.init(minBufferSize, sample);
     }
 }

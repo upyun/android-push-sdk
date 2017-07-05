@@ -84,21 +84,21 @@ public class VideoEncoder {
 //        mPushHeight = mWidth;
 
         //for MTK CPU
-        if (config.orientation == Config.Orientation.HORIZONTAL) {
-            mPushWidth = mWidth / 32 * 32;
-            mPushHeight = mHeight / 32 * 32;
-        } else {
-            mPushWidth = mHeight / 32 * 32;
-            mPushHeight = mWidth / 32 * 32;
-        }
-
 //        if (config.orientation == Config.Orientation.HORIZONTAL) {
 //            mPushWidth = mWidth / 32 * 32;
-//            mPushHeight = mWidth * 9 / 16 / 32 * 32;
+//            mPushHeight = mHeight / 32 * 32;
 //        } else {
-//            mPushWidth = mWidth * 9 / 16 / 32 * 32;
+//            mPushWidth = mHeight / 32 * 32;
 //            mPushHeight = mWidth / 32 * 32;
 //        }
+
+        if (config.orientation == Config.Orientation.HORIZONTAL) {
+            mPushWidth = mWidth / 32 * 32;
+            mPushHeight = mWidth * 9 / 16 / 32 * 32;
+        } else {
+            mPushWidth = mWidth * 9 / 16 / 32 * 32;
+            mPushHeight = mWidth / 32 * 32;
+        }
 
 
         mRotatedFrameBuffer = new byte[mPushHeight * mPushWidth * 3 / 2];

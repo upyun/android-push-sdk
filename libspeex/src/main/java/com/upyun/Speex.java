@@ -2,21 +2,12 @@ package com.upyun;
 
 public class Speex {
 
-    /* quality 
-     * 1 : 4kbps (very noticeable artifacts, usually intelligible) 
-     * 2 : 6kbps (very noticeable artifacts, good intelligibility) 
-     * 4 : 8kbps (noticeable artifacts sometimes) 
-     * 6 : 11kpbs (artifacts usually only noticeable with headphones) 
-     * 8 : 15kbps (artifacts not usually noticeable) 
-     */
-    private static final int DEFAULT_COMPRESSION = 8;
-
     public Speex() {
     }
 
-    public void init(int size) {
+    public void init(int size, int samplerate) {
         load();
-        open(DEFAULT_COMPRESSION,size);
+        init(-8, size, samplerate);
     }
 
     private void load() {
@@ -27,14 +18,10 @@ public class Speex {
         }
     }
 
-    public native int open(int compression,int size);
+    public native void init(int level, int size, int samplerate);
 
-    public native int getFrameSize();
-
-//    public native int process(short lin[], int offset, int size);
-
+    //    public native byte[] process(byte lin[], int offset, int size);
     public native int process(byte lin[], int offset, int size);
 
     public native void close();
-
 }
