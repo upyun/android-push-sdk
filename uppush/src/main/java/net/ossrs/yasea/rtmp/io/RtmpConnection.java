@@ -21,8 +21,10 @@ import net.ossrs.yasea.rtmp.packets.WindowAckSize;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -36,7 +38,7 @@ import java.util.regex.Pattern;
 
 /**
  * Main RTMP connection implementation class
- * 
+ *
  * @author francois, leoma
  */
 public class RtmpConnection implements RtmpPublisher, PacketRxHandler {
@@ -94,8 +96,8 @@ public class RtmpConnection implements RtmpPublisher, PacketRxHandler {
         Matcher matcher = rtmpUrlPattern.matcher(url);
         if (matcher.matches()) {
             tcUrl = url.substring(0, url.lastIndexOf('/'));
-            swfUrl = "";            
-            pageUrl = "";            
+            swfUrl = "";
+            pageUrl = "";
             host = matcher.group(1);
             String portStr = matcher.group(3);
             port = portStr != null ? Integer.parseInt(portStr) : 1935;
@@ -103,6 +105,10 @@ public class RtmpConnection implements RtmpPublisher, PacketRxHandler {
             streamName = matcher.group(6);
         } else {
             throw new IllegalArgumentException("Invalid RTMP URL. Must be in format: rtmp://host[:port]/application[/streamName]");
+        }
+
+        if (!detect(host)) {
+            throw new IOException("Invalid RTMP URL");
         }
 
         // socket connection
@@ -137,6 +143,43 @@ public class RtmpConnection implements RtmpPublisher, PacketRxHandler {
         }).start();
 
         rtmpConnect();
+    }
+
+    private String ping(String host) {
+
+        String cmd = "ping -c 1 " + host;
+        Process p;
+        try {
+            p = Runtime.getRuntime().exec(cmd);
+            BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+            String s;
+            String res = "";
+            while ((s = stdInput.readLine()) != null) {
+                res += s + "\n";
+            }
+            p.destroy();
+//            Log.e("ping:", host + ":::" + res);
+            return res;
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private boolean detect(String host) {
+
+        String res = ping(host);
+
+        if (res == null) {
+            return false;
+        }
+
+        if (res.contains("aicdn.com") || res.contains("bravocloud.com.cn") || res.contains("bravovcloud.com.cn")) {
+            return true;
+        }
+        return false;
     }
 
     private void rtmpConnect() throws IOException, IllegalStateException {
@@ -351,8 +394,8 @@ public class RtmpConnection implements RtmpPublisher, PacketRxHandler {
         fullyConnected = false;
         publishPermitted = false;
         tcUrl = null;
-        swfUrl = null;            
-        pageUrl = null;            
+        swfUrl = null;
+        pageUrl = null;
         appName = null;
         streamName = null;
         publishType = null;

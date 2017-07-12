@@ -228,7 +228,7 @@ public class SrsFlvMuxer {
                                 audioSequenceHeader = frame;
                             }
                         } catch (IOException ioe) {
-                            ioe.printStackTrace();
+//                            ioe.printStackTrace();
 //                            Thread.getDefaultUncaughtExceptionHandler().uncaughtException(worker, ioe);
                             handler.onNetWorkError(ioe, 0);
                         } catch (IllegalStateException e) {
