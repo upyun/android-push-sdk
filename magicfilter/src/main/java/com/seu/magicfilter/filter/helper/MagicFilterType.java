@@ -3,7 +3,7 @@ package com.seu.magicfilter.filter.helper;
 /**
  * Created by why8222 on 2016/2/25.
  */
-public enum  MagicFilterType {
+public enum MagicFilterType {
     NONE,
     FAIRYTALE,
     SUNRISE,
@@ -53,5 +53,6 @@ public enum  MagicFilterType {
     HUE,
     SATURATION,
     SHARPEN,
-    IMAGE_ADJUST
+    IMAGE_ADJUST,
+    WATERMARK
 }

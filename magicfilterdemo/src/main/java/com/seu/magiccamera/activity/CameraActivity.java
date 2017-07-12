@@ -8,6 +8,8 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
@@ -27,6 +29,8 @@ import com.seu.magicfilter.filter.helper.MagicFilterType;
 import com.seu.magicfilter.utils.MagicParams;
 import com.seu.magicfilter.widget.MagicCameraView;
 import com.seu.magicfilterdemo.R;
+import com.upyun.hardware.Watermark;
+import com.upyun.hardware.WatermarkPosition;
 
 public class CameraActivity extends Activity {
     private LinearLayout mFilterLayout;
@@ -38,6 +42,8 @@ public class CameraActivity extends Activity {
     private ImageView btn_flashlight;
 
     private ObjectAnimator animator;
+
+    MagicCameraView cameraView;
 
     private final MagicFilterType[] types = new MagicFilterType[]{
             MagicFilterType.NONE,
@@ -97,20 +103,20 @@ public class CameraActivity extends Activity {
         animator.start();
         isRecording = true;
 
-        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-            @Override
-            public void uncaughtException(Thread thread, final Throwable ex) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Log.e("推流失败：", ex.toString());
-                        animator.end();
-                        magicEngine.stopRecord();
-                        isRecording = false;
-                    }
-                });
-            }
-        });
+//        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+//            @Override
+//            public void uncaughtException(Thread thread, final Throwable ex) {
+//                runOnUiThread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        Log.e("推流失败：", ex.toString());
+//                        animator.end();
+//                        magicEngine.stopRecord();
+//                        isRecording = false;
+//                    }
+//                });
+//            }
+//        });
     }
 
     private void initView() {
@@ -141,7 +147,7 @@ public class CameraActivity extends Activity {
         animator.setRepeatCount(ValueAnimator.INFINITE);
         Point screenSize = new Point();
         getWindowManager().getDefaultDisplay().getSize(screenSize);
-        MagicCameraView cameraView = (MagicCameraView) findViewById(R.id.glsurfaceview_camera);
+        cameraView = (MagicCameraView) findViewById(R.id.glsurfaceview_camera);
         RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) cameraView.getLayoutParams();
         params.width = screenSize.x;
         params.height = screenSize.x * 4 / 3;
@@ -155,6 +161,11 @@ public class CameraActivity extends Activity {
                 return true;
             }
         });
+
+        //设置水印
+//        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.watermark);
+//        Watermark watermark = new Watermark(bitmap, 100, 50, WatermarkPosition.WATERMARK_ORIENTATION_BOTTOM_RIGHT, 8, 8);
+//        cameraView.setWatermark(watermark);
     }
 
     private FilterAdapter.onFilterChangeListener onFilterChangeListener = new FilterAdapter.onFilterChangeListener() {
@@ -193,7 +204,8 @@ public class CameraActivity extends Activity {
                     showFilters();
                     break;
                 case R.id.btn_camera_switch:
-                    magicEngine.switchCamera();
+//                    magicEngine.switchCamera();
+                    cameraView.switchCamera();
                     btn_flashlight.setEnabled(!btn_flashlight.isEnabled());
                     break;
                 case R.id.btn_camera_beauty:
@@ -217,7 +229,6 @@ public class CameraActivity extends Activity {
             }
         }
     };
-
 
     private void pushVideo() {
         if (isRecording) {
@@ -290,5 +301,11 @@ public class CameraActivity extends Activity {
             }
         });
         animator.start();
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        magicEngine.stopRecord();
     }
 }

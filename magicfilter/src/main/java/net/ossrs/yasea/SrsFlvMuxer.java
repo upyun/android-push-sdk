@@ -4,13 +4,16 @@ import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.util.Log;
 
+import net.ossrs.yasea.rtmp.RtmpPublisher;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import net.ossrs.yasea.rtmp.RtmpPublisher;
 
 /**
  * Created by winlin on 5/2/15.
@@ -19,29 +22,29 @@ import net.ossrs.yasea.rtmp.RtmpPublisher;
  *
  * @remark we must start a worker thread to send data to server.
  * @see android.media.MediaMuxer https://developer.android.com/reference/android/media/MediaMuxer.html
- * <p/>
+ * <p>
  * Usage:
  * muxer = new SrsRtmp("rtmp://ossrs.net/live/yasea");
  * muxer.start();
- * <p/>
+ * <p>
  * MediaFormat aformat = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_AAC, asample_rate, achannel);
  * // setup the aformat for audio.
  * atrack = muxer.addTrack(aformat);
- * <p/>
+ * <p>
  * MediaFormat vformat = MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_AVC, vsize.width, vsize.height);
  * // setup the vformat for video.
  * vtrack = muxer.addTrack(vformat);
- * <p/>
+ * <p>
  * // encode the video frame from camera by h.264 codec to es and bi,
  * // where es is the h.264 ES(element stream).
  * ByteBuffer es, MediaCodec.BufferInfo bi;
  * muxer.writeSampleData(vtrack, es, bi);
- * <p/>
+ * <p>
  * // encode the audio frame from microphone by aac codec to es and bi,
  * // where es is the aac ES(element stream).
  * ByteBuffer es, MediaCodec.BufferInfo bi;
  * muxer.writeSampleData(atrack, es, bi);
- * <p/>
+ * <p>
  * muxer.stop();
  * muxer.release();
  */
@@ -63,6 +66,13 @@ public class SrsFlvMuxer {
     private static final int AUDIO_TRACK = 101;
     private static final String TAG = "SrsFlvMuxer";
 
+    // Statistics bitrate
+    private Timer timer = null;
+    private int bitrate = 0;
+    private int totalSize = 0;
+
+    private RtmpPublisher.EventHandler handler = null;
+
     /**
      * constructor.
      *
@@ -70,6 +80,7 @@ public class SrsFlvMuxer {
      */
     public SrsFlvMuxer(RtmpPublisher.EventHandler handler) {
         publisher = new SrsRtmpPublisher(handler);
+        this.handler = handler;
     }
 
     /**
@@ -98,7 +109,7 @@ public class SrsFlvMuxer {
      * @return The track index for this newly added track.
      */
     public int addTrack(MediaFormat format) {
-        if (format.getString(MediaFormat.KEY_MIME).equals(MediaFormat.MIMETYPE_VIDEO_AVC)) {
+        if (format.getString(MediaFormat.KEY_MIME) == MediaFormat.MIMETYPE_VIDEO_AVC) {
             flv.setVideoTrack(format);
             return VIDEO_TRACK;
         } else {
@@ -117,6 +128,11 @@ public class SrsFlvMuxer {
         connected = false;
         sequenceHeaderOk = false;
         Log.i(TAG, "worker: disconnect SRS ok.");
+
+        if (timer != null) {
+            timer.cancel();
+            timer = null;
+        }
     }
 
     private void connect(String url) throws IllegalStateException, IOException {
@@ -127,6 +143,21 @@ public class SrsFlvMuxer {
             Log.i(TAG, String.format("worker: connect to RTMP server by url=%s\n", url));
             connected = true;
             sequenceHeaderOk = false;
+
+            if (timer != null) {
+                timer.cancel();
+                timer = null;
+            }
+            timer = new Timer();
+            timer.scheduleAtFixedRate(new TimerTask() {
+
+                @Override
+                public void run() {
+                    bitrate = bitrate * 8 / 1000;//kbps
+                    publisher.getEventHandler().onRtmpDataInfo(bitrate, totalSize);
+                    bitrate = 0;
+                }
+            }, 1000, 1000);
         }
     }
 
@@ -145,6 +176,9 @@ public class SrsFlvMuxer {
             Log.i(TAG, String.format("worker: send frame type=%d, dts=%d, size=%dB",
                     frame.type, frame.dts, frame.tag.size));
         }
+
+        bitrate += frame.tag.size;
+        totalSize += frame.tag.size / 1000;//KB
     }
 
     /**
@@ -163,11 +197,10 @@ public class SrsFlvMuxer {
                         SrsFlvFrame frame = frameCache.poll();
                         try {
                             // only connect when got keyframe.
-//                            Log.e(TAG, "is_keyframe" + "frame.is_keyframe()");
-
-                            if (frame.is_keyframe()) {
-                                connect(rtmpUrl);
-                            }
+//                            if (frame.is_keyframe()) {
+//                                connect(rtmpUrl);
+//                            }
+                            connect(rtmpUrl);
                             // when sequence header required,
                             // adjust the dts by the current frame and sent it.
                             if (!sequenceHeaderOk) {
@@ -195,8 +228,12 @@ public class SrsFlvMuxer {
                                 audioSequenceHeader = frame;
                             }
                         } catch (IOException ioe) {
-                            ioe.printStackTrace();
-                            Thread.getDefaultUncaughtExceptionHandler().uncaughtException(worker, ioe);
+//                            ioe.printStackTrace();
+//                            Thread.getDefaultUncaughtExceptionHandler().uncaughtException(worker, ioe);
+                            handler.onNetWorkError(ioe, 0);
+                        } catch (IllegalStateException e) {
+                            handler.onNetWorkError(e, 0);
+//                            worker.interrupt();
                         }
                     }
                     // Waiting for next frame
@@ -249,7 +286,6 @@ public class SrsFlvMuxer {
         }
 
         if (VIDEO_TRACK == trackIndex) {
-//            Log.e(TAG, "write video:" + byteBuf);
             flv.writeVideoSample(byteBuf, bufferInfo);
         } else {
             flv.writeAudioSample(byteBuf, bufferInfo);
@@ -277,14 +313,6 @@ public class SrsFlvMuxer {
         if (sb.length() > 0) {
             Log.i(tag, String.format("%03d-%03d: %s", size / bytes_in_line * bytes_in_line, i - 1, sb.toString()));
         }
-    }
-
-    public void setPPS(byte[] PPS) {
-        flv.setPPS(PPS);
-    }
-
-    public void setSPS(byte[] SPS) {
-        flv.setSPS(SPS);
     }
 
     // E.4.3.1 VIDEODATA
@@ -388,7 +416,7 @@ public class SrsFlvMuxer {
     /**
      * the aac profile, for ADTS(HLS/TS)
      *
-     * @see https://github.com/simple-rtmp-server/srs/issues/310
+     * @see "https://github.com/simple-rtmp-server/srs/issues/310"
      */
     class SrsAacProfile {
         public final static int Reserved = 3;
@@ -490,6 +518,30 @@ public class SrsFlvMuxer {
             return as;
         }
 
+        public SrsAnnexbSearch srs_avc_startswith_annexbII(ByteBuffer bb, int size) {
+            SrsAnnexbSearch as = new SrsAnnexbSearch();
+            as.match = false;
+
+            int pos = bb.position();
+            while (pos < size - 3) {
+                // not match.
+                if (bb.get(pos) != 0x00 || bb.get(pos + 1) != 0x00) {
+                    break;
+                }
+
+                // match N[00] 00 00 01, where N>=0
+                if (bb.get(pos + 2) == 0x01) {
+                    as.match = true;
+                    as.nb_start_code = pos + 3 - bb.position();
+                    break;
+                }
+
+                pos++;
+            }
+
+            return as;
+        }
+
         public boolean srs_aac_startswith_adts(ByteBuffer bb, MediaCodec.BufferInfo bi) {
             int pos = bb.position();
             if (bi.size - pos < 2) {
@@ -521,6 +573,14 @@ public class SrsFlvMuxer {
         public ByteBuffer data;
         public int size;
     }
+
+    public boolean isSpsPpsSent() {
+        if (flv != null) {
+            return flv.isSpsPpsSent();
+        }
+        return false;
+    }
+
 
     /**
      * the muxed flv frame.
@@ -920,7 +980,6 @@ public class SrsFlvMuxer {
 
             // send each frame.
             while (bb.position() < bi.size) {
-//                Log.e(TAG, "bb.position() < bi.size:" + (bb.position() < bi.size));
                 SrsFlvFrameBytes frame = avc.annexb_demux(bb, bi);
 
                 // 5bits, 7.3.1 NAL unit syntax,
@@ -948,6 +1007,7 @@ public class SrsFlvMuxer {
                         frame.data.get(sps);
                         h264_sps_changed = true;
                         h264_sps = ByteBuffer.wrap(sps);
+                        Log.e(TAG, "sps:" + Arrays.toString(sps));
                     }
                     continue;
                 }
@@ -959,6 +1019,7 @@ public class SrsFlvMuxer {
                         frame.data.get(pps);
                         h264_pps_changed = true;
                         h264_pps = ByteBuffer.wrap(pps);
+                        Log.e(TAG, "pps:" + Arrays.toString(pps));
                     }
                     continue;
                 }
@@ -969,11 +1030,13 @@ public class SrsFlvMuxer {
                 ibps.add(frame);
             }
 
-//            Log.e(TAG, "dts:" + dts + "pts:" + pts);
-
             write_h264_sps_pps(dts, pts);
 
             write_h264_ipb_frame(ibps, frame_type, dts, pts);
+        }
+
+        public boolean isSpsPpsSent() {
+            return h264_sps_pps_sent && !h264_sps_changed && !h264_pps_changed;
         }
 
         private void write_h264_sps_pps(int dts, int pts) {
@@ -1011,7 +1074,6 @@ public class SrsFlvMuxer {
         private void write_h264_ipb_frame(ArrayList<SrsFlvFrameBytes> ibps, int frame_type, int dts, int pts) {
             // when sps or pps not sent, ignore the packet.
             // @see https://github.com/simple-rtmp-server/srs/issues/203
-//            Log.e(TAG, "h264_sps_pps_sent:" + h264_sps_pps_sent);
             if (!h264_sps_pps_sent) {
                 return;
             }
@@ -1023,8 +1085,6 @@ public class SrsFlvMuxer {
                 //Log.i(TAG, String.format("flv: keyframe %dB, dts=%d", flv_tag.size, dts));
             }
 
-
-//            Log.e(TAG, "write packet");
             // the timestamp in rtmp message header is dts.
             rtmp_write_packet(SrsCodecFlvTag.Video, dts, frame_type, avc_packet_type, flv_tag);
         }
@@ -1037,20 +1097,10 @@ public class SrsFlvMuxer {
             frame.frame_type = frame_type;
             frame.avc_aac_type = avc_aac_type;
 
-//            Log.e(TAG, "add frame:" + frame);
             frameCache.add(frame);
             synchronized (txFrameLock) {
                 txFrameLock.notifyAll();
             }
-        }
-
-        public void setPPS(byte[] PPS) {
-            h264_pps = ByteBuffer.wrap(PPS);
-        }
-
-        public void setSPS(byte[] SPS) {
-            h264_sps = ByteBuffer.wrap(SPS);
-            h264_sps_pps_sent = true;
         }
     }
 }

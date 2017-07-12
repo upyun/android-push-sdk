@@ -1,13 +1,14 @@
 package net.ossrs.yasea.rtmp.io;
 
+import android.util.Log;
+
+import net.ossrs.yasea.rtmp.RtmpPublisher;
+import net.ossrs.yasea.rtmp.packets.RtmpPacket;
+
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketException;
-
-import android.util.Log;
-
-import net.ossrs.yasea.rtmp.packets.RtmpPacket;
 
 /**
  * RTMPConnection's read thread
@@ -21,12 +22,14 @@ public class ReadThread extends Thread {
     private RtmpDecoder rtmpDecoder;
     private InputStream in;
     private PacketRxHandler packetRxHandler;
+    private RtmpPublisher publisher;
 
-    public ReadThread(RtmpSessionInfo rtmpSessionInfo, InputStream in, PacketRxHandler packetRxHandler) {
+    public ReadThread(RtmpSessionInfo rtmpSessionInfo, InputStream in, PacketRxHandler packetRxHandler, RtmpPublisher publisher) {
         super("RtmpReadThread");
         this.in = in;
         this.packetRxHandler = packetRxHandler;
         this.rtmpDecoder = new RtmpDecoder(rtmpSessionInfo);
+        this.publisher = publisher;
     }
 
     @Override
@@ -48,10 +51,12 @@ public class ReadThread extends Thread {
 //                }
             } catch (SocketException se) {
                 Log.e(TAG, "ReadThread: Caught SocketException while reading/decoding packet, shutting down: " + se.getMessage());
-                Thread.getDefaultUncaughtExceptionHandler().uncaughtException(this, se);
+//                Thread.getDefaultUncaughtExceptionHandler().uncaughtException(this, se);
+                publisher.getEventHandler().onNetWorkError(se, 2);
             } catch (IOException ioe) {
                 Log.e(TAG, "ReadThread: Caught exception while reading/decoding packet, shutting down: " + ioe.getMessage());
-                Thread.getDefaultUncaughtExceptionHandler().uncaughtException(this, ioe);
+//                Thread.getDefaultUncaughtExceptionHandler().uncaughtException(this, ioe);
+                publisher.getEventHandler().onNetWorkError(ioe, 2);
             }
         }
 

@@ -1,12 +1,8 @@
 package com.seu.magicfilter.widget;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.SurfaceTexture;
-import android.hardware.Camera;
 import android.opengl.EGL14;
-import android.opengl.GLES20;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -15,19 +11,13 @@ import com.seu.magicfilter.camera.CameraEngine;
 import com.seu.magicfilter.camera.utils.CameraInfo;
 import com.seu.magicfilter.encoder.video.TextureMovieEncoder;
 import com.seu.magicfilter.filter.advanced.MagicBeautyFilter;
+import com.seu.magicfilter.filter.advanced.MagicWaterFilter;
 import com.seu.magicfilter.filter.base.MagicCameraInputFilter;
 import com.seu.magicfilter.filter.helper.MagicFilterType;
-import com.seu.magicfilter.helper.SavePictureTask;
 import com.seu.magicfilter.utils.MagicParams;
 import com.seu.magicfilter.utils.OpenGlUtils;
-import com.seu.magicfilter.utils.Rotation;
-import com.seu.magicfilter.utils.TextureRotationUtil;
 import com.seu.magicfilter.widget.base.MagicBaseView;
-
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
+import com.upyun.hardware.Watermark;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -37,6 +27,7 @@ import javax.microedition.khronos.opengles.GL10;
  */
 public class MagicCameraView extends MagicBaseView {
 
+    private static final String TAG = "MagicCameraView";
     private MagicCameraInputFilter cameraInputFilter;
     private MagicBeautyFilter beautyFilter;
 
@@ -96,6 +87,11 @@ public class MagicCameraView extends MagicBaseView {
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         super.onSurfaceChanged(gl, width, height);
         openCamera();
+
+        synchronized (mSurfaceAvailable) {
+            surfaceAvailable = true;
+            mSurfaceAvailable.notify();
+        }
     }
 
     @Override
@@ -115,7 +111,7 @@ public class MagicCameraView extends MagicBaseView {
                     videoEncoder.setCubeBuffer(gLCubeBuffer);
                     videoEncoder.startRecording(new TextureMovieEncoder.EncoderConfig(
                             outputPath, info.previewHeight, info.previewWidth,
-                            1000000, EGL14.eglGetCurrentContext(),
+                            700000, EGL14.eglGetCurrentContext(),
                             info));
                     recordingStatus = RECORDING_ON;
                     break;
@@ -190,6 +186,24 @@ public class MagicCameraView extends MagicBaseView {
             CameraEngine.startPreview(surfaceTexture);
     }
 
+
+    public void switchCamera() {
+        CameraEngine.switchCamera();
+        CameraInfo info = CameraEngine.getCameraInfo();
+        if (info.orientation == 90 || info.orientation == 270) {
+            imageWidth = info.previewHeight;
+            imageHeight = info.previewWidth;
+        } else {
+            imageWidth = info.previewWidth;
+            imageHeight = info.previewHeight;
+        }
+        cameraInputFilter.onInputSizeChanged(imageWidth, imageHeight);
+        adjustSize(info.orientation, info.isFront, true);
+        if (surfaceTexture != null)
+            CameraEngine.startPreview(surfaceTexture);
+    }
+
+
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         super.surfaceDestroyed(holder);
@@ -202,9 +216,10 @@ public class MagicCameraView extends MagicBaseView {
     public void changeRecordingState(boolean isRecording) {
 
         synchronized (mSurfaceAvailable) {
-            while(!surfaceAvailable) {
+            while (!surfaceAvailable) {
                 try {
                     mSurfaceAvailable.wait();
+                    Log.e(TAG, "changeRecordingState: " + surfaceAvailable);
                 } catch (InterruptedException ie) {
                     // ignore
                 }
@@ -222,101 +237,17 @@ public class MagicCameraView extends MagicBaseView {
             cameraInputFilter.destroyFramebuffers();
     }
 
-    @Override
-    public void savePicture(final SavePictureTask savePictureTask) {
-        CameraEngine.takePicture(null, null, new Camera.PictureCallback() {
-            @Override
-            public void onPictureTaken(byte[] data, Camera camera) {
-                CameraEngine.stopPreview();
-                final Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
-                queueEvent(new Runnable() {
-                    @Override
-                    public void run() {
-                        final Bitmap photo = drawPhoto(bitmap, CameraEngine.getCameraInfo().isFront);
-                        GLES20.glViewport(0, 0, surfaceWidth, surfaceHeight);
-                        if (photo != null)
-                            savePictureTask.execute(photo);
-                    }
-                });
-                CameraEngine.startPreview();
-            }
-        });
-    }
-
-    private Bitmap drawPhoto(Bitmap bitmap, boolean isRotated) {
-        int width = bitmap.getWidth();
-        int height = bitmap.getHeight();
-        int[] mFrameBuffers = new int[1];
-        int[] mFrameBufferTextures = new int[1];
-        if (beautyFilter == null)
-            beautyFilter = new MagicBeautyFilter();
-        beautyFilter.init();
-        beautyFilter.onDisplaySizeChanged(width, height);
-        beautyFilter.onInputSizeChanged(width, height);
-
-        if (filter != null) {
-            filter.onInputSizeChanged(width, height);
-            filter.onDisplaySizeChanged(width, height);
-        }
-        GLES20.glGenFramebuffers(1, mFrameBuffers, 0);
-        GLES20.glGenTextures(1, mFrameBufferTextures, 0);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mFrameBufferTextures[0]);
-        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, width, height, 0,
-                GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
-        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,
-                GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,
-                GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
-        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,
-                GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,
-                GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFrameBuffers[0]);
-        GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0,
-                GLES20.GL_TEXTURE_2D, mFrameBufferTextures[0], 0);
-
-        GLES20.glViewport(0, 0, width, height);
-        int textureId = OpenGlUtils.loadTexture(bitmap, OpenGlUtils.NO_TEXTURE, true);
-
-        FloatBuffer gLCubeBuffer = ByteBuffer.allocateDirect(TextureRotationUtil.CUBE.length * 4)
-                .order(ByteOrder.nativeOrder())
-                .asFloatBuffer();
-        FloatBuffer gLTextureBuffer = ByteBuffer.allocateDirect(TextureRotationUtil.TEXTURE_NO_ROTATION.length * 4)
-                .order(ByteOrder.nativeOrder())
-                .asFloatBuffer();
-        gLCubeBuffer.put(TextureRotationUtil.CUBE).position(0);
-        if (isRotated)
-            gLTextureBuffer.put(TextureRotationUtil.getRotation(Rotation.NORMAL, false, false)).position(0);
-        else
-            gLTextureBuffer.put(TextureRotationUtil.getRotation(Rotation.NORMAL, false, true)).position(0);
-
-
-        if (filter == null) {
-            beautyFilter.onDrawFrame(textureId, gLCubeBuffer, gLTextureBuffer);
-        } else {
-            beautyFilter.onDrawFrame(textureId);
-            filter.onDrawFrame(mFrameBufferTextures[0], gLCubeBuffer, gLTextureBuffer);
-        }
-        IntBuffer ib = IntBuffer.allocate(width * height);
-        GLES20.glReadPixels(0, 0, width, height, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, ib);
-        Bitmap result = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        result.copyPixelsFromBuffer(ib);
-
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
-        GLES20.glDeleteTextures(1, new int[]{textureId}, 0);
-        GLES20.glDeleteFramebuffers(mFrameBuffers.length, mFrameBuffers, 0);
-        GLES20.glDeleteTextures(mFrameBufferTextures.length, mFrameBufferTextures, 0);
-
-        beautyFilter.destroy();
-        beautyFilter = null;
-        if (filter != null) {
-            filter.onDisplaySizeChanged(surfaceWidth, surfaceHeight);
-            filter.onInputSizeChanged(imageWidth, imageHeight);
-        }
-        return result;
-    }
-
     public void onBeautyLevelChanged() {
         cameraInputFilter.onBeautyLevelChanged();
+    }
+
+    public void setWatermark(final Watermark watermark) {
+        this.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                MagicWaterFilter.mWatermark = watermark;
+                setFilter(MagicFilterType.WATERMARK);
+            }
+        }, 1000);
     }
 }

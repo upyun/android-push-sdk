@@ -57,22 +57,17 @@ public class WriteThread extends Thread {
                         calcFps();
                     }
                 }
-                
-                //// TODO: 16/8/12 退出崩溃
                 out.flush();
             } catch (SocketException se) {
                 Log.e(TAG, "WriteThread: Caught SocketException during write loop, shutting down: " + se.getMessage());
 //                Thread.getDefaultUncaughtExceptionHandler().uncaughtException(this, se);
+                publisher.getEventHandler().onNetWorkError(se, 1);
                 active = false;
                 continue;
             } catch (IOException ioe) {
                 Log.e(TAG, "WriteThread: Caught IOException during write loop, shutting down: " + ioe.getMessage());
 //                Thread.getDefaultUncaughtExceptionHandler().uncaughtException(this, ioe);
-                active = false;
-                continue;
-            }catch (Exception e){
-                Log.e(TAG, "WriteThread: Caught Exception during write loop, shutting down: " + e.getMessage());
-//                Thread.getDefaultUncaughtExceptionHandler().uncaughtException(this, e);
+                publisher.getEventHandler().onNetWorkError(ioe, 1);
                 active = false;
                 continue;
             }

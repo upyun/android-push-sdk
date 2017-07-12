@@ -1,15 +1,20 @@
 package com.seu.magicfilter;
 
+import android.util.Log;
+
 import com.seu.magicfilter.camera.CameraEngine;
 import com.seu.magicfilter.filter.helper.MagicFilterType;
 import com.seu.magicfilter.utils.MagicParams;
 import com.seu.magicfilter.widget.MagicCameraView;
 import com.seu.magicfilter.widget.base.MagicBaseView;
 
+import net.ossrs.yasea.rtmp.RtmpPublisher;
+
 /**
  * Created by why8222 on 2016/2/25.
  */
-public class MagicEngine {
+public class MagicEngine implements RtmpPublisher.EventHandler {
+    private static final String TAG = "MagicEngine";
     private static MagicEngine magicEngine;
 
     public static MagicEngine getInstance() {
@@ -20,7 +25,7 @@ public class MagicEngine {
     }
 
     private MagicEngine(Builder builder) {
-
+        magicEngine = this;
     }
 
     public void setFilter(MagicFilterType type) {
@@ -28,7 +33,7 @@ public class MagicEngine {
     }
 
     public void startRecord() {
-        new Thread(){
+        new Thread() {
             @Override
             public void run() {
                 if (MagicParams.magicBaseView instanceof MagicCameraView)
@@ -55,9 +60,62 @@ public class MagicEngine {
         CameraEngine.switchCamera();
     }
 
-    public void switchFlashlight() { CameraEngine.switchFlashlight(); }
+    public void switchFlashlight() {
+        CameraEngine.switchFlashlight();
+    }
 
-    public void focusOnTouch() { CameraEngine.focusOnTouch(); }
+    public void focusOnTouch() {
+        CameraEngine.focusOnTouch();
+    }
+
+    public void setSilence(boolean b) {
+        MagicParams.SILENCE = b;
+    }
+
+    @Override
+    public void onRtmpConnecting(String msg) {
+        Log.i(TAG, msg);
+    }
+
+    @Override
+    public void onRtmpConnected(String msg) {
+        Log.i(TAG, msg);
+    }
+
+    @Override
+    public void onRtmpVideoStreaming(String msg) {
+        Log.i(TAG, msg);
+    }
+
+    @Override
+    public void onRtmpAudioStreaming(String msg) {
+        Log.i(TAG, msg);
+    }
+
+    @Override
+    public void onRtmpStopped(String msg) {
+        Log.i(TAG, msg);
+    }
+
+    @Override
+    public void onRtmpDisconnected(String msg) {
+        Log.i(TAG, msg);
+    }
+
+    @Override
+    public void onRtmpOutputFps(final double fps) {
+        Log.i(TAG, String.format("Output Fps: %f", fps));
+    }
+
+    @Override
+    public void onRtmpDataInfo(int bitrate, long totalSize) {
+
+    }
+
+    @Override
+    public void onNetWorkError(Exception e, int tag) {
+        Log.e(TAG, "onNetWorkError:" + e.toString());
+    }
 
     public static class Builder {
 

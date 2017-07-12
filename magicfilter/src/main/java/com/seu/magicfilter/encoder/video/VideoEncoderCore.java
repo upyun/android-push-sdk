@@ -25,10 +25,10 @@ import android.media.MediaRecorder;
 import android.util.Log;
 import android.view.Surface;
 
+import com.seu.magicfilter.MagicEngine;
 import com.upyun.hardware.AudioEncoder;
 
 import net.ossrs.yasea.SrsFlvMuxer;
-import net.ossrs.yasea.rtmp.RtmpPublisher;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -49,8 +49,8 @@ public class VideoEncoderCore {
 
     // TODO: these ought to be configurable as well
     private static final String MIME_TYPE = "video/avc";    // H.264 Advanced Video Coding
-    private static final int FRAME_RATE = 30;               // 30fps
-    private static final int IFRAME_INTERVAL = 5;           // 5 seconds between I-frames
+    private static final int FRAME_RATE = 15;               // 15fps
+    private static final int IFRAME_INTERVAL = 1;           // 1 seconds between I-frames
 
     private Surface mInputSurface;
     private MediaCodec mEncoder;
@@ -63,44 +63,7 @@ public class VideoEncoderCore {
 
     private int mTrackIndexFlv;
 
-    public SrsFlvMuxer flvMuxer = new SrsFlvMuxer(new RtmpPublisher.EventHandler() {
-        public static final String TAG = "flvMuxer";
-
-        @Override
-        public void onRtmpConnecting(String msg) {
-            Log.i(TAG, msg);
-        }
-
-        @Override
-        public void onRtmpConnected(String msg) {
-            Log.i(TAG, msg);
-        }
-
-        @Override
-        public void onRtmpVideoStreaming(String msg) {
-            Log.i(TAG, msg);
-        }
-
-        @Override
-        public void onRtmpAudioStreaming(String msg) {
-            Log.i(TAG, msg);
-        }
-
-        @Override
-        public void onRtmpStopped(String msg) {
-            Log.i(TAG, msg);
-        }
-
-        @Override
-        public void onRtmpDisconnected(String msg) {
-            Log.i(TAG, msg);
-        }
-
-        @Override
-        public void onRtmpOutputFps(final double fps) {
-            Log.i(TAG, String.format("Output Fps: %f", fps));
-        }
-    });
+    public SrsFlvMuxer flvMuxer;
 
 
     /**
@@ -109,6 +72,9 @@ public class VideoEncoderCore {
 
     public VideoEncoderCore(int width, int height, int bitRate, String outputFile)
             throws IOException {
+
+        flvMuxer = new SrsFlvMuxer(MagicEngine.getInstance());
+
         mBufferInfo = new MediaCodec.BufferInfo();
 
         MediaFormat format = MediaFormat.createVideoFormat(MIME_TYPE, width, height);
@@ -299,6 +265,7 @@ public class VideoEncoderCore {
 
                     if (flvMuxer.getVideoFrameCacheNumber().get() < 5) {
                         flvMuxer.writeSampleData(mTrackIndexFlv, encodedData, mBufferInfo);
+                        Log.e(TAG,"push video");
                     }
                     if (VERBOSE) {
                         Log.d(TAG, "sent " + mBufferInfo.size + " bytes to muxer, ts=" +

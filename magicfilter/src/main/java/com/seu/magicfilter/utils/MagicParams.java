@@ -17,6 +17,8 @@ public class MagicParams {
 
     public static int HEIGHT = 480;
 
+    public static boolean SILENCE = false;
+
     public MagicParams() {
 
     }

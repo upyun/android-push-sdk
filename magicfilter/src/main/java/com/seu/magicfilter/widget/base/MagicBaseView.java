@@ -8,7 +8,6 @@ import android.util.AttributeSet;
 import com.seu.magicfilter.filter.base.gpuimage.GPUImageFilter;
 import com.seu.magicfilter.filter.helper.MagicFilterFactory;
 import com.seu.magicfilter.filter.helper.MagicFilterType;
-import com.seu.magicfilter.helper.SavePictureTask;
 import com.seu.magicfilter.utils.OpenGlUtils;
 import com.seu.magicfilter.utils.Rotation;
 import com.seu.magicfilter.utils.TextureRotationUtil;
@@ -141,7 +140,7 @@ public abstract class MagicBaseView extends GLSurfaceView implements GLSurfaceVi
         }
     }
 
-    public abstract void savePicture(SavePictureTask savePictureTask);
+//    public abstract void savePicture(SavePictureTask savePictureTask);
 
     protected void adjustSize(int rotation, boolean flipHorizontal, boolean flipVertical){
         float[] textureCords = TextureRotationUtil.getRotation(Rotation.fromInt(rotation),

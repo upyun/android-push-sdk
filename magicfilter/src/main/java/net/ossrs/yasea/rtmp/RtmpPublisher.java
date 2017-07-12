@@ -100,5 +100,9 @@ public interface RtmpPublisher {
         void onRtmpDisconnected(String msg);
 
         void onRtmpOutputFps(double fps);
+
+        void onRtmpDataInfo(int bitrate, long totalSize);
+
+        void onNetWorkError(Exception e, int tag);
     }
 }

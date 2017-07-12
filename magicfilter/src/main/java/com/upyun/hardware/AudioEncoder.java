@@ -1,12 +1,16 @@
 package com.upyun.hardware;
 
 import android.annotation.TargetApi;
+import android.media.AudioFormat;
+import android.media.AudioRecord;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecList;
 import android.media.MediaFormat;
 import android.os.Build;
 import android.text.TextUtils;
+
+import com.seu.magicfilter.utils.MagicParams;
 
 import net.ossrs.yasea.SrsFlvMuxer;
 
@@ -48,7 +52,9 @@ public class AudioEncoder {
             MediaFormat mediaFormat = MediaFormat.createAudioFormat(MINE_TYPE,
                     44100, 1);
             mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, 64000);
-            mediaFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 0);
+            mediaFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, AudioRecord.getMinBufferSize(44100,
+                    AudioFormat.CHANNEL_IN_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT));
 
 //                mediaFormat.setInteger(MediaFormat.KEY_AAC_PROFILE,
 //                        MediaCodecInfo.CodecProfileLevel.AACObjectLC);
@@ -63,6 +69,11 @@ public class AudioEncoder {
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     public void fireAudio(byte[] data, int length) {
+
+
+        if (MagicParams.SILENCE) {
+            data = new byte[data.length];
+        }
 
         if (mFlvMuxer.getVideoFrameCacheNumber().get() > 5) {
             return;

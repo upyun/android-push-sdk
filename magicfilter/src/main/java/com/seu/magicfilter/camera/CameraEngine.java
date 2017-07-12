@@ -116,12 +116,11 @@ public class CameraEngine {
 //        Size previewSize = CameraUtils.getLargePreviewSize(camera);
 //        parameters.setPreviewSize(previewSize.width, previewSize.height);
         parameters.setPreviewSize(MagicParams.WIDTH, MagicParams.HEIGHT);
-//        parameters.setPreviewSize(480, 640);
+        parameters.setPictureSize(MagicParams.WIDTH, MagicParams.HEIGHT);
 //        Size pictureSize = CameraUtils.getLargePictureSize(camera);
 //        parameters.setPictureSize(pictureSize.width, pictureSize.height);
-        parameters.setPictureSize(MagicParams.WIDTH, MagicParams.HEIGHT);
-//        parameters.setPictureSize(480, 640);
-        parameters.setRotation(90);
+//        parameters.setPictureSize(MagicParams.WIDTH, MagicParams.HEIGHT);
+//        parameters.setRotation(360);
         camera.cancelAutoFocus();
         camera.setParameters(parameters);
     }

@@ -1,13 +1,13 @@
 package com.seu.magicfilter.filter.base;
 
 
-import java.nio.FloatBuffer;
-import java.util.List;
+import android.opengl.GLES20;
 
 import com.seu.magicfilter.filter.base.gpuimage.GPUImageFilter;
 import com.seu.magicfilter.utils.OpenGlUtils;
 
-import android.opengl.GLES20;
+import java.nio.FloatBuffer;
+import java.util.List;
 
 
 public class MagicBaseGroupFilter extends GPUImageFilter{
@@ -104,28 +104,28 @@ public class MagicBaseGroupFilter extends GPUImageFilter{
     	return OpenGlUtils.ON_DRAWN;
     }
     
-    @Override
-    public int onDrawFrame(final int textureId) {
-    	if (frameBuffers == null || frameBufferTextures == null) {
-            return OpenGlUtils.NOT_INIT;
-        }
-    	int size = filters.size();
-        int previousTexture = textureId;
-        for (int i = 0; i < size; i++) {
-        	GPUImageFilter filter = filters.get(i);
-            boolean isNotLast = i < size - 1;
-            if (isNotLast) {
-                GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, frameBuffers[i]);
-                GLES20.glClearColor(0, 0, 0, 0);
-                filter.onDrawFrame(previousTexture, mGLCubeBuffer, mGLTextureBuffer);
-                GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
-                previousTexture = frameBufferTextures[i];
-            }else{
-            	filter.onDrawFrame(previousTexture, mGLCubeBuffer, mGLTextureBuffer);
-            }
-        }
-    	return OpenGlUtils.ON_DRAWN;
-    }
+//    @Override
+//    public int onDrawFrame(final int textureId) {
+//    	if (frameBuffers == null || frameBufferTextures == null) {
+//            return OpenGlUtils.NOT_INIT;
+//        }
+//    	int size = filters.size();
+//        int previousTexture = textureId;
+//        for (int i = 0; i < size; i++) {
+//        	GPUImageFilter filter = filters.get(i);
+//            boolean isNotLast = i < size - 1;
+//            if (isNotLast) {
+//                GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, frameBuffers[i]);
+//                GLES20.glClearColor(0, 0, 0, 0);
+//                filter.onDrawFrame(previousTexture, mGLCubeBuffer, mGLTextureBuffer);
+//                GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+//                previousTexture = frameBufferTextures[i];
+//            }else{
+//            	filter.onDrawFrame(previousTexture, mGLCubeBuffer, mGLTextureBuffer);
+//            }
+//        }
+//    	return OpenGlUtils.ON_DRAWN;
+//    }
     
     private void destroyFramebuffers() {
         if (frameBufferTextures != null) {

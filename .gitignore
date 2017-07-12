@@ -48,7 +48,9 @@ captures/
 out
 gen
 
-*.DS_Store
+.DS_Store
+*/.DS_Store
+
 /uppush/bintrayv1.gradle
 /uppush/installv1.gradle
 /.gradletasknamecache
