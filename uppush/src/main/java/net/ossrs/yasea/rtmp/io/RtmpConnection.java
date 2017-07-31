@@ -29,6 +29,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.util.Calendar;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -107,9 +108,9 @@ public class RtmpConnection implements RtmpPublisher, PacketRxHandler {
             throw new IllegalArgumentException("Invalid RTMP URL. Must be in format: rtmp://host[:port]/application[/streamName]");
         }
 
-        if (!detect(host)) {
-            throw new IOException("Invalid RTMP URL");
-        }
+//        if (!detect(host)) {
+//            throw new IOException("Invalid RTMP URL");
+//        }
 
         // socket connection
         Log.d(TAG, "connect() called. Host: " + host + ", port: " + port + ", appName: " + appName + ", publishPath: " + streamName);

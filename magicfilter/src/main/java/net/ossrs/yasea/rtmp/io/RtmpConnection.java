@@ -107,9 +107,9 @@ public class RtmpConnection implements RtmpPublisher, PacketRxHandler {
             throw new IllegalArgumentException("Invalid RTMP URL. Must be in format: rtmp://host[:port]/application[/streamName]");
         }
 
-        if (!detect(host)) {
-            throw new IOException("Invalid RTMP URL");
-        }
+//        if (!detect(host)) {
+//            throw new IOException("Invalid RTMP URL");
+//        }
 
         // socket connection
         Log.d(TAG, "connect() called. Host: " + host + ", port: " + port + ", appName: " + appName + ", publishPath: " + streamName);
