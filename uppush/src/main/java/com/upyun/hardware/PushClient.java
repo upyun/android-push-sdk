@@ -9,7 +9,6 @@ import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.net.ConnectivityManager;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -50,12 +49,13 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
     //    protected static int MODE = MODE_NORMAL;
     protected static int MODE = MODE_NORMAL;
     //    protected static int MODE = MODE_VIDEO_ONLY;
-    protected static int CAMERA_TYPE;
 
     private NetStateReceiver mNetStateReceiver = null;
     private Context mContext;
     private Handler mHandler;
     private double mFps;
+
+    private ExecutorService executorService = Executors.newFixedThreadPool(1);
 
     private boolean adjustBitEnable = false;//是否开启动态码率，默认关闭
 
@@ -226,8 +226,6 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
 
     private void startCamera(final SurfaceHolder holder) {
 
-        CAMERA_TYPE = config.cameraType;
-
         if (mCamera == null) {
             mCamera = getDefaultCamera(config.cameraType);
         } else {
@@ -272,7 +270,7 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
             } catch (IOException e) {
                 e.printStackTrace();
             }
-//            mCamera.setDisplayOrientation(90);
+            mCamera.setDisplayOrientation(90);
             mCamera.startPreview();
         }
 
@@ -318,10 +316,22 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
     public void onPreviewFrame(final byte[] data, Camera camera) {
 
         final long stamp = System.nanoTime() / 1000;
+        Log.e(TAG, "onPreviewFrame " + stamp);
+
         synchronized (PushClient.class) {
-            if (videoEncoder != null && isPush) {
-                videoEncoder.fireVideo(data, stamp);
-            }
+
+            executorService.execute(new Runnable() {
+                @Override
+                public void run() {
+                    if (videoEncoder != null && isPush) {
+                        videoEncoder.fireVideo(data, stamp);
+                    }
+                }
+            });
+
+//            if (videoEncoder != null && isPush) {
+//                videoEncoder.fireVideo(data, stamp);
+//            }
         }
         camera.addCallbackBuffer(mYuvFrameBuffer);
     }
@@ -457,7 +467,6 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
                     }
                 }
             }
-
             return null;
         }
 
@@ -489,19 +498,15 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
 
     public boolean covertCamera() {
         Log.e(TAG, "covertCamera start:" + System.nanoTime() / 1000);
-        boolean converted = false;
-        if (isPush) {
-            if (config.cameraType == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-                config.cameraType = Camera.CameraInfo.CAMERA_FACING_BACK;
-            } else {
-                config.cameraType = Camera.CameraInfo.CAMERA_FACING_FRONT;
-            }
-            stopCamera();
-            startCamera(mSurface.getHolder());
-            converted = true;
+        if (config.cameraType == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+            config.cameraType = Camera.CameraInfo.CAMERA_FACING_BACK;
+        } else {
+            config.cameraType = Camera.CameraInfo.CAMERA_FACING_FRONT;
         }
+        stopCamera();
+        startCamera(mSurface.getHolder());
         Log.e(TAG, "covertCamera end:" + System.nanoTime() / 1000);
-        return converted;
+        return true;
     }
 
     public static void focusOnTouch() {
@@ -578,6 +583,10 @@ public class PushClient implements Camera.PreviewCallback, SurfaceHolder.Callbac
         } else {
             Log.w(TAG, "Adjust the bit rate switch is off.");
         }
+    }
+
+    public void setUseSoft(boolean useSoft) {
+        config.useSofeEncode = useSoft;
     }
 }
 

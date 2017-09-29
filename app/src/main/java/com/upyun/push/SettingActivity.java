@@ -19,6 +19,7 @@ public class SettingActivity extends Activity implements RadioGroup.OnCheckedCha
     private RadioGroup mRgResolution;
     private RadioGroup mRgCamera;
     private RadioGroup mRgOrientation;
+    private RadioGroup mRgEncode;
     private Button mBtSave;
     private Config config;
 
@@ -37,11 +38,13 @@ public class SettingActivity extends Activity implements RadioGroup.OnCheckedCha
         mRgResolution = (RadioGroup) findViewById(R.id.rg_resolution);
         mRgCamera = (RadioGroup) findViewById(R.id.rg_camera);
         mRgOrientation = (RadioGroup) findViewById(R.id.rg_orientation);
+        mRgEncode = (RadioGroup) findViewById(R.id.rg_encode);
         mBtSave = (Button) findViewById(R.id.bt_save);
 
         mRgResolution.setOnCheckedChangeListener(this);
         mRgCamera.setOnCheckedChangeListener(this);
         mRgOrientation.setOnCheckedChangeListener(this);
+        mRgEncode.setOnCheckedChangeListener(this);
         mBtSave.setOnClickListener(this);
         if (MyApplication.getInstance().config == null) {
             this.config = Config.getInstance();
@@ -55,6 +58,9 @@ public class SettingActivity extends Activity implements RadioGroup.OnCheckedCha
                 R.id.rb_back_camera : R.id.rb_front_camera);
         mRgOrientation.check(config.orientation == Config.Orientation.HORIZONTAL ?
                 R.id.rb_horizontal : R.id.rb_vertical);
+
+        mRgEncode.check(config.useSofeEncode ?
+                R.id.rb_softencode : R.id.rb_hardencode);
         if (config.resolution == Config.Resolution.HIGH) {
             mRgResolution.check(R.id.rb_high);
         } else if (config.resolution == Config.Resolution.NORMAL) {
@@ -87,6 +93,12 @@ public class SettingActivity extends Activity implements RadioGroup.OnCheckedCha
                 break;
             case R.id.rb_vertical:
                 config.orientation = Config.Orientation.VERTICAL;
+                break;
+            case R.id.rb_softencode:
+                config.useSofeEncode = true;
+                break;
+            case R.id.rb_hardencode:
+                config.useSofeEncode = false;
                 break;
 
         }

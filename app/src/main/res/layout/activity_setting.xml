@@ -95,6 +95,28 @@
 
     </RadioGroup>
 
+    <RadioGroup
+        android:id="@+id/rg_encode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <RadioButton
+            android:id="@+id/rb_hardencode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="硬编" />
+
+        <RadioButton
+            android:id="@+id/rb_softencode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="软编" />
+
+    </RadioGroup>
+
     <EditText
         android:id="@+id/et_bitrate"
         android:layout_width="match_parent"
