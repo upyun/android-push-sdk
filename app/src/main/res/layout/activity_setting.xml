@@ -39,7 +39,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:checked="true"
-            android:text="680*480" />
+            android:text="640*480" />
 
         <RadioButton
             android:id="@+id/rb_low"

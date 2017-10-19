@@ -1,16 +1,18 @@
-#android-push-sdk
+# android-push-sdk
 
-##SDK 概述
+## SDK 概述
 
 `android-push-sdk` 是一个适用于 Android 平台 RTMP 推流的 SDK，可高度定制化和二次开发，为 Android 开发者提供简单，快捷的接口。新版 SDK 已经去除ffmpeg 不再依赖 so 库，方便开发者调试和开发，并提供带滤镜版本和不带滤镜版本。
 
-##推流器功能特性
+## 推流器功能特性
 
 * 音频编码：`AAC` 
 
 * 视频编码：`H.264`
 
 * 支持音频，视频硬件编码
+
+* 支持视频软编码
 
 * 推流协议：`RTMP`
 
@@ -43,7 +45,7 @@
 * 连麦版：可实现连麦直播，[文档](https://github.com/upyun/android-push-sdk/tree/master/README_RTC.md)和 DEMO [下载地址](http://formtest.b0.upaiyun.com/assets/%E8%BF%9E%E9%BA%A6.zip)。
 ## SDK 使用示例
 
-###添加 SDK 所需权限
+### 添加 SDK 所需权限
 ```
 	<uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.INTERNET"/>
@@ -52,7 +54,7 @@
 ```
 
 
-###初始化 PushClient 传入 SurfaceView 和 Config 参数：
+### 初始化 PushClient 传入 SurfaceView 和 Config 参数：
 
 ```java
 	 public PushClient(SurfaceView surface, Config config)
@@ -78,23 +80,25 @@
     public int cameraType;
     //显示方向 水平，竖直
     public Orientation orientation;
+    //使用软编码
+    public boolean useSofeEncode;
     
 ```
 
-###开始和关闭推流：
+### 开始和关闭推流：
 
 ```java
 	public void startPush()
 	public void stopPush()
 ``` 
 
-###修改设置配置：
+### 修改设置配置：
 
 ```java
 	 public void setConfig(Config config)
 ```
 
-##SDK 最低要求
+## SDK 最低要求
 
 Android 4.1(API 16) 以上
 
@@ -176,9 +180,14 @@ Android 4.1(API 16) 以上
 
 * 增加自动重连
 
-##反馈与建议
+1.0.1 添加软编码&性能优化
+
+* 添加软编码
+
+* 图像处理性能优化 
+
+## 反馈与建议
 
  邮箱：<livesdk@upai.com>
  
  QQ: `3392887145`
-##
