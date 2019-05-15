@@ -40,9 +40,9 @@
 
 * 滤镜版：运行 Modeule [magicfilterdemo](https://github.com/upyun/android-push-sdk/tree/master/magicfilterdemo)。
 
-* 录屏版：可实现录屏直播，需 Android 5.0及以上系统支持，录屏 SDK [文档](https://github.com/upyun/android-push-sdk/tree/master/README_RecordScr.md)及 DEMO [下载链接](http://formtest.b0.upaiyun.com/%E5%BD%95%E5%B1%8F%E7%9B%B4%E6%92%ADSDK.zip)。
+* 录屏版：可实现录屏直播，需 Android 5.0及以上系统支持，录屏 SDK [文档](https://github.com/upyun/android-push-sdk/tree/master/README_RecordScr.md)及 DEMO [下载链接](http://formtest.b0.upaiyun.com/assert/luping.zip)。
 
-* 连麦版：可实现连麦直播，[文档](https://github.com/upyun/android-push-sdk/tree/master/README_RTC.md)和 DEMO [下载地址](http://formtest.b0.upaiyun.com/assets/%E8%BF%9E%E9%BA%A6.zip)。
+* 连麦版：可实现连麦直播，[文档](https://github.com/upyun/android-push-sdk/tree/master/README_RTC.md)和 DEMO [下载地址](http://formtest.b0.upaiyun.com/assert/lianmai.zip)。
 ## SDK 使用示例
 
 ### 添加 SDK 所需权限
